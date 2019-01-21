@@ -3,29 +3,32 @@
 #include <Wire.h>
 #include <avr/sleep.h>
 
-#define EMP 0                         // 0 - НИЧЕГО, НУЛЬ
-#define SLEEP 2                       // 2 - отправить контроллеры в сон SLEEP
-#define WUP 3                         // 3 - разбудить контроллеры WAKE UP
-#define RST 9                         // 9 - комманда RESET
-#define STP 10                        // 10 - СТОП
-#define FWD 11                        // 11 - ВПЕРЕД
-#define BWD 12                        // 12 - НАЗАД
-#define SPU 15                        // 15 - УСКОРИТЬ
-#define SDN 16                        // 16 - ЗАМЕДЛИТЬ
-#define LFT 21                        // 21 - поворот НАЛЕВО
-#define RGT 22                        // 22 - поворот НАПРАВО
-#define TBK 23                        // 23 - РАЗВОРОТ на 180
-#define TLT 31                        // 31 - ВКЛЮЧИТЬ СВЕТ
-#define PLT 32                        // 32 - ВЫКЛЮЧИТЬ СВЕТ
-#define SHB 33                        // 33 - сделать подсветку ЯРЧЕ
-#define SHD 34                        // 34 - сделать подсветку ТУСКЛЕЕ
-#define SUNON 41                      // 41 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН
-#define SUNOFF 42                     // 42 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН 
+#define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
+#define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
+#define WUP 103                         // 103 - разбудить контроллеры WAKE UP
+#define RST 109                         // 109 - комманда RESET
+#define STP 110                        // 110 - СТОП
+#define FWD 111                        // 111 - ВПЕРЕД
+#define BWD 112                        // 112 - НАЗАД
+#define SPU 115                        // 115 - УСКОРИТЬ
+#define SDN 116                        // 116 - ЗАМЕДЛИТЬ
+#define LFT 121                        // 121 - поворот НАЛЕВО
+#define RGT 122                        // 122 - поворот НАПРАВО
+#define TBK 123                        // 123 - РАЗВОРОТ на 180
+#define TLT 131                        // 131 - ВКЛЮЧИТЬ СВЕТ
+#define PLT 132                        // 132 - ВЫКЛЮЧИТЬ СВЕТ
+#define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
+#define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
 
-#define THIS_SLAVE_DEVICE_NUMBER 101  // I2C-номер данного устройства
-#define DALAY_TIME 150                // время задержки по умолчанию 500мс
+#define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
+#define DALAY_TIME 150                // время задержки по умолчанию 150мс
+#define MINIMAL_MOTOR_AMPERAGE 14     // значение соответствует напряжению xV
+#define MAXIMAL_MOTOR_AMPERAGE 16     // значение соответствует напряжению yV
+#define LEFT_MOTOR 1                  // двигатель №1 - левый
+#define RIGHT_MOTOR 2                 // двигатель №2 - правый
+#define LED 3                         // двигатель №3 - светодиод
 
-#define MOTORLATCH 12
+#define MOTORLATCH 12                 // пины для корректной работы шилда Двигателей
 #define MOTORCLK 4
 #define MOTORENABLE 7
 #define MOTORDATA 8
@@ -42,18 +45,61 @@
 #define MOTOR3_PWM 6
 #define MOTOR4_PWM 5
 
-#define motorFORWARD 1
-#define motorBACKWARD 2
-#define motorRELEASE 3
+#define motorFORWARD 1                            // режим ВПЕРЁД
+#define motorBACKWARD 2                           // режим НАЗАД
+#define motorRELEASE 3                            // освободить Двигатель
 
-#define INTERRUPT_PIN 3
+#define INTERRUPT_PIN 3                           // пин для отработки прерывания Выход из Сна
+#define VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN A0      // вольтметр питания левого двигателя
+#define VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN A1     // вольтметр питания правого двигателя
+#define SDA A4
+#define SCL A5
 
-byte mode = 0;                        //последний режим
-int tankSpeed = 0;                    //для проверки скорости танка
-byte tankDirection = 0;               //для проверки направления движения
-int lightBrightness = 0;              // сила подсветки
-int sunBrightness = 0;                // освещенность солнцем
-unsigned long dTtemp = 0;             // выдержка в Actions()
+volatile byte mode = 0;                           //последний режим
+volatile byte in_data = 0;
+
+byte tankDirection = 0;                           //для проверки направления движения
+int lightBrightness = 0;                          // сила подсветки
+int sunBrightness = 0;                            // освещенность солнцем
+unsigned long dTtemp = 0;                         // задержка времени в Actions()
+unsigned long dTloopGeneral = 0;                  // задержка времени в loop()
+byte engineTorqueRatio = 40;                      // разница передачи ШИМ сигнала на двигателя
+int tankSpeed;
+
+class ChasisActions
+{
+  public:
+    ChasisActions();
+    ~ChasisActions();
+    void ActionResetTankMode();                               //RESET
+    void ActionMoveTankForward();                             //вперёд
+    void ActionMoveTankBackward();                            //назад
+    void ActionStopTank();                                    //стоп 
+    void ActionTurnTankLeft();                                //поворот влево 
+    void ActionTurnTankRight();                               //поворот вправо
+    void ActionTurnTankBack();                                //разворот на 180
+    void ActionSpeedUpTank();                                 //ускорить
+    void ActionSlowDownTank();                                //замедлить
+    void ActionTurnOnTheLight();                              //включить свет
+    void ActionPutOutTheLight();                              //выключить свет
+    void ActionShineBrighter();                               //усилить яркость
+    void ActionShineDimmer();                                 //уменьшить яркость    
+};
+
+class Motor
+{
+  public:
+    Motor();
+    ~Motor();
+    void chooseMotor(int motorNumber, int command, int motorSpeed);    // выбор двигетеля
+
+  private:
+    void motor_output (int output, int high_low, int motorSpeed);
+    void shiftWrite(int output, int high_low);
+};
+
+ChasisActions *action;
+Motor *motor;
 
 void setup()
 {
@@ -88,59 +134,52 @@ void ChooseAction(byte in_data)       // выбор действия в зави
       mode = EMP;
       break;  
     case RST:                               
-      ActionResetTankMode();
+      action->ActionResetTankMode();
       resetFunc(); 
       break;  
     case SLEEP:
       ActionSetControlerToSleep();    
       break;      
     case STP:                              
-      ActionStopTank();
+      action->ActionStopTank();
       break;
     case FWD:                         
-      ActionMoveTankForward(170);
+      action->ActionMoveTankForward();
       break;
     case BWD:                             
-      ActionMoveTankBackward(170);
+      action->ActionMoveTankBackward();
       break;
     case LFT:                              
-      ActionTurnTankLeft();
+      action->ActionTurnTankLeft();
       break;
     case RGT:                         
-      ActionTurnTankRight();
+      action->ActionTurnTankRight();
       break;
     case TBK:                         
-      ActionTurnTankBack();
+      action->ActionTurnTankBack();
       break;
     case SPU:                         
-      ActionSpeedUpTank();
+      action->ActionSpeedUpTank();
       break;
     case SDN:                         
-      ActionSlowDownTank();
+      action->ActionSlowDownTank();
       break;
     case TLT:                         
-      ActionTurnOnTheLight();
+      action->ActionTurnOnTheLight();
       break;
     case PLT:                         
-      ActionPutOutTheLight();
+      action->ActionPutOutTheLight();
       break;
     case SHB:                         
-      ActionShineBrighter();
+      action->ActionShineBrighter();
       break;
     case SHD:                         
-      ActionShineDimmer();
+      action->ActionShineDimmer();
       break;    
     default:
       break;      
   }  
   in_data = EMP;
-}
-
-void ActionResetTankMode()                        //RESET
-{
-  mode = EMP;
-  ActionStopTank();
-  ActionPutOutTheLight();
 }
 
 void ActionSetControlerToSleep()                  // отправить устройство в сон
@@ -156,276 +195,4 @@ void ActionSetControlerToSleep()                  // отправить устр
   detachInterrupt(1);
   interrupts();
   mode = EMP;
-}
-
-void ActionMoveTankForward(byte motorSpeed)       //вперёд
-{
-  tankDirection = motorFORWARD;
-  tankSpeed = motorSpeed;
-  chooseMotor(1, tankDirection, motorSpeed);
-  chooseMotor(2, tankDirection, motorSpeed-52);  
-  mode = FWD;
-}
-
-void ActionMoveTankBackward(byte motorSpeed)        //назад 
-{
-  tankDirection = motorBACKWARD;
-  tankSpeed = motorSpeed;
-  chooseMotor(1, tankDirection, motorSpeed);
-  chooseMotor(2, tankDirection, motorSpeed-52);
-  mode = BWD;
-}
-
-void ActionStopTank()                               //стоп 
-{
-  chooseMotor(1, motorRELEASE, 0);
-  chooseMotor(2, motorRELEASE, 0);
-  tankSpeed = 0;
-  tankDirection = 0;
-  mode = STP;
-}
-
-void ActionTurnTankLeft()                           //поворот влево 
-{
-  while(millis() - dTtemp < DALAY_TIME)
-  {
-    chooseMotor(1, motorBACKWARD, 200);
-    chooseMotor(2, motorFORWARD, 200);
-  }  
-  if(mode == FWD)
-  {
-    ActionMoveTankForward(150);
-  }
-  else if(mode == BWD)
-  {
-    ActionMoveTankBackward(150);
-  }
-  else 
-  {
-    ActionStopTank();
-  }  
-}
-
-void ActionTurnTankRight()                          //поворот вправо
-{
-  while(millis() - dTtemp < DALAY_TIME)
-  {
-    chooseMotor(1, motorFORWARD, 200);
-    chooseMotor(2, motorBACKWARD, 200);
-  }
-  if(mode == FWD)
-  {
-    ActionMoveTankForward(150);
-  }
-  else if(mode == BWD)
-  {
-    ActionMoveTankBackward(150);
-  }
-  else 
-  { 
-    ActionStopTank();
-  } 
-}
-
-void ActionTurnTankBack()                           //разворот на 180
-{
-  while(millis() - dTtemp < DALAY_TIME*2)
-  {
-    chooseMotor(1, motorFORWARD, 200);
-    chooseMotor(2, motorBACKWARD, 200);
-  }  
-  if(mode == FWD)
-  {
-    ActionMoveTankForward(150);
-  }
-  else if(mode == BWD)
-  {
-    ActionMoveTankBackward(150);
-  }
-  else 
-  {
-    ActionStopTank(); 
-  } 
-}
-
-void ActionSpeedUpTank()                            //ускорить
-{
-  tankSpeed += 10;
-  if (tankDirection !=0 && tankSpeed > 0 && tankSpeed < 255)
-  {
-    if (tankDirection == motorFORWARD)
-    {
-      ActionMoveTankForward(tankSpeed);
-    }
-    else
-    {
-      ActionMoveTankBackward(tankSpeed);
-    }
-  }
-}
-
-void ActionSlowDownTank()                           //замедлить
-{
-  tankSpeed -= 10;
-  if (tankDirection !=0 && tankSpeed > 0)
-  {
-    if (tankDirection == motorFORWARD)
-    {
-      ActionMoveTankForward(tankSpeed);
-    }
-    else
-    {
-      ActionMoveTankBackward(tankSpeed);
-    }
-  }
-}
-
-void ActionTurnOnTheLight()                         //включить свет
-{
-  if(lightBrightness == 0)
-  {
-    lightBrightness = 10;  
-    chooseMotor(3, motorFORWARD, lightBrightness);    
-    mode = TLT;
-  }
-}
-
-void ActionPutOutTheLight()                         //выключить свет
-{
-  if(lightBrightness > 0)
-  {
-    lightBrightness = 0;
-    chooseMotor(3,motorRELEASE,0);    
-    mode = PLT;
-  }
-}
-
-void ActionShineBrighter()                          //усилить яркость
-{
-  lightBrightness += 10;
-  if(lightBrightness > 50)lightBrightness = 50;
-  chooseMotor(3, motorFORWARD, lightBrightness);
-}
-
-void ActionShineDimmer()                          //уменьшить яркость
-{
-  lightBrightness -=10;
-  if(lightBrightness <= 0)
-  {
-    ActionPutOutTheLight();
-  }
-  else
-  {
-    chooseMotor(3, motorFORWARD, lightBrightness);
-  }
-}
-
-void chooseMotor(int motorNumber, int command, int motorSpeed)    // выбор двигетеля
-{
-  int motorA, motorB;
-
-  if (motorNumber >= 1 && motorNumber <= 4)
-  {
-    switch (motorNumber)
-    {
-      case 1:
-        motorA   = MOTOR1_A;
-        motorB   = MOTOR1_B;
-        break;
-      case 2:
-        motorA   = MOTOR2_A;
-        motorB   = MOTOR2_B;
-        break;
-      case 3:
-        motorA   = MOTOR3_A;
-        motorB   = MOTOR3_B;
-        break;
-      case 4:
-        motorA   = MOTOR4_A;
-        motorB   = MOTOR4_B;
-        break;
-      default:
-        break;
-    }
-
-    switch (command)
-    {
-      case motorFORWARD:
-        motor_output (motorA, HIGH, motorSpeed);
-        motor_output (motorB, LOW, -1);
-        break;
-      case motorBACKWARD:
-        motor_output (motorA, LOW, motorSpeed);
-        motor_output (motorB, HIGH, -1);
-        break;
-      case motorRELEASE:
-        motor_output (motorA, LOW, 0);
-        motor_output (motorB, LOW, -1);
-        break;
-      default:
-        break;
-    }
-  }
-}
-
-void motor_output (int output, int high_low, int motorSpeed)
-{
-  int motorPWM;
-
-  switch (output)
-  {
-    case MOTOR1_A:
-    case MOTOR1_B:
-      motorPWM = MOTOR1_PWM;
-      break;
-    case MOTOR2_A:
-    case MOTOR2_B:
-      motorPWM = MOTOR2_PWM;
-      break;
-    case MOTOR3_A:
-    case MOTOR3_B:
-      motorPWM = MOTOR3_PWM;
-      break;
-    case MOTOR4_A:
-    case MOTOR4_B:
-      motorPWM = MOTOR4_PWM;
-      break;
-    default:
-      motorSpeed = -3333;
-      break;
-  }
-
-  if (motorSpeed != -3333)
-  {
-    shiftWrite(output, high_low);
-    if (motorSpeed >= 0 && motorSpeed <= 255)
-    {
-      analogWrite(motorPWM, motorSpeed);
-    }
-  }
-}
-
-void shiftWrite(int output, int high_low)
-{
-  static int latch_copy;
-  static int shift_register_initialized = false;
-  if (!shift_register_initialized)
-  {
-    pinMode(MOTORLATCH, OUTPUT);
-    pinMode(MOTORENABLE, OUTPUT);
-    pinMode(MOTORDATA, OUTPUT);
-    pinMode(MOTORCLK, OUTPUT);
-    digitalWrite(MOTORDATA, LOW);
-    digitalWrite(MOTORLATCH, LOW);
-    digitalWrite(MOTORCLK, LOW);
-    digitalWrite(MOTORENABLE, LOW);
-    latch_copy = 0;
-    shift_register_initialized = true;
-  }
-  bitWrite(latch_copy, output, high_low);
-  shiftOut(MOTORDATA, MOTORCLK, MSBFIRST, latch_copy);
-  delayMicroseconds(5);
-  digitalWrite(MOTORLATCH, HIGH);
-  delayMicroseconds(5);
-  digitalWrite(MOTORLATCH, LOW);
 }
