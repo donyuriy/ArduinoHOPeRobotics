@@ -119,7 +119,7 @@ Servo servoSunBatteryHorizontal;
 
 void setup()
 {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Wire.begin(); 
   pinMode(ULTRASOUND_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_SENSOR_ECHO_PIN, INPUT);
@@ -172,20 +172,6 @@ void loop()
     }
   }
 }
-
-void runTest()
-{
-  for(byte i = 0; i < 256; i++)
-  {
-    Wire.beginTransmission(SLAVE_DEVICE_CHASIS);
-    Wire.write(0);
-    Wire.write(i);
-    Wire.endTransmission(true); 
-    delay(100);
-    Serial.println(i);
-  }
-}
-
 
 void SoundProcessing()                                 //обработка прерывания на порте D2, звуковой сенсор
 {
