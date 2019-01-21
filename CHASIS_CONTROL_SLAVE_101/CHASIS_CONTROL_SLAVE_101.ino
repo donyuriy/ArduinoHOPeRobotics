@@ -103,9 +103,12 @@ Motor *motor;
 
 void setup()
 {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
+  pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
+  pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT); 
+  tankSpeed = 180;
 }
 
 void(* resetFunc) (void) = 0;
@@ -115,7 +118,7 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
   byte in_data = Wire.read();
   interrupts();
   ChooseAction(in_data);
-  Serial.println(in_data);
+  //Serial.println(in_data);
 }
 
 void loop()
@@ -127,7 +130,6 @@ void WakeUpNow()                      //обработка прерывания 
 void ChooseAction(byte in_data)       // выбор действия в зависимости от полученой команды
 {
   dTtemp = millis();
-  Serial.println(in_data);
   switch (in_data)
   {
     case EMP:                         
@@ -180,6 +182,45 @@ void ChooseAction(byte in_data)       // выбор действия в зави
       break;      
   }  
   in_data = EMP;
+}
+
+void GetSpeedDependence()
+{
+    float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
+    float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
+
+    if(amperageLeftMotor < MINIMAL_MOTOR_AMPERAGE &&
+        amperageRightMotor < MINIMAL_MOTOR_AMPERAGE)
+    {                                   //логика такова, если этот показатель уменьшается, значит нагрузка на двигатель низкая, мощность можно снизить в целях экономии энергии
+      action->ActionSlowDownTank();
+    }
+    else if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
+              amperageRightMotor > MAXIMAL_MOTOR_AMPERAGE)
+    {                                   //логика такова, если этот показатель повышается, значит двигатель сильно нагружен, нужно подать большую мощность
+      action->ActionSpeedUpTank();
+    }
+}
+
+float GetMotorVoltage(byte motorNumber)
+{
+  float data = 0;
+  byte avarage = 100;
+  switch(motorNumber)
+  {
+    case 1:     
+      for (byte i = 0; i < avarage; i ++)
+      {
+        data += analogRead(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN) * 5.0 / 102.4;
+      }    
+      break;
+    case 2:
+      for (byte i = 0; i < avarage; i ++)
+      {
+        data += analogRead(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN) * 5.0 / 102.4;
+      }
+      break;
+  }
+  return (float)(data / avarage);
 }
 
 void ActionSetControlerToSleep()                  // отправить устройство в сон

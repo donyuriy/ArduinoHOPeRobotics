@@ -12,7 +12,6 @@ void ChasisActions :: ActionResetTankMode()
 
 void ChasisActions :: ActionMoveTankForward()       
 {
-  tankSpeed = 190;
   tankDirection = motorFORWARD;
   motor->chooseMotor(LEFT_MOTOR, tankDirection, tankSpeed);
   motor->chooseMotor(RIGHT_MOTOR, tankDirection, tankSpeed - engineTorqueRatio);  
@@ -21,7 +20,6 @@ void ChasisActions :: ActionMoveTankForward()
 
 void ChasisActions :: ActionMoveTankBackward()    
 {
-  tankSpeed = 190;
   tankDirection = motorBACKWARD;
   motor->chooseMotor(LEFT_MOTOR, tankDirection, tankSpeed);
   motor->chooseMotor(RIGHT_MOTOR, tankDirection, tankSpeed - engineTorqueRatio);
@@ -38,7 +36,6 @@ void ChasisActions :: ActionStopTank()
 
 void ChasisActions :: ActionTurnTankLeft()
 {
-  tankSpeed = 190;
   while(millis() - dTtemp < DALAY_TIME)
   {
     motor->chooseMotor(LEFT_MOTOR, motorBACKWARD, tankSpeed + 20);
@@ -60,7 +57,6 @@ void ChasisActions :: ActionTurnTankLeft()
 
 void ChasisActions :: ActionTurnTankRight()           
 {
-  tankSpeed = 190;
   while(millis() - dTtemp < DALAY_TIME)
   {
     motor->chooseMotor(LEFT_MOTOR, motorFORWARD, tankSpeed + 20);
@@ -82,7 +78,6 @@ void ChasisActions :: ActionTurnTankRight()
 
 void ChasisActions :: ActionTurnTankBack()                           
 {
-  tankSpeed = 190;
   while(millis() - dTtemp < DALAY_TIME*2)
   {
     motor->chooseMotor(LEFT_MOTOR, motorFORWARD, tankSpeed + 20);
