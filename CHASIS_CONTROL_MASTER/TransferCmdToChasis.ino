@@ -1,12 +1,12 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------- MASTER (Отправка комманд на другие контроллеры) ----------------------------------------
 
-void Command :: SendCommandToChasis(byte command)                 //отправка команд на шасси
+void Command :: SendCommandToChasis(byte cmd)                 //отправка команд на шасси
 {
   Wire.beginTransmission(SLAVE_DEVICE_CHASIS);
-  Wire.write(command);
-  Wire.endTransmission();
-  Wire.requestFrom(SLAVE_DEVICE_CHASIS, 1);  
+  Wire.write(cmd);
+  Wire.endTransmission(true);  
+  Wire.requestFrom(SLAVE_DEVICE_CHASIS, 2);
 }
 
 void Command :: ResetCmd()
@@ -15,15 +15,15 @@ void Command :: ResetCmd()
 }
 
 void Command :: MoveForwardCmd()                     //двигаться вперёд
-{
-  extraMode = FWD;
+{  
   SendCommandToChasis(FWD);
+  extraMode = FWD;
 }
 
 void Command :: MoveBackCmd()                        //двигаться назад
-{
-  extraMode = BWD;
+{  
   SendCommandToChasis(BWD);
+  extraMode = BWD;
 }
 
 void Command :: TurnRightCmd()                       //повернуть вправо

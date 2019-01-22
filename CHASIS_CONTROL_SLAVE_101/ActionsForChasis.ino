@@ -1,12 +1,12 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------------ SLAVE 101 ------------------------------------
 
+
 void ChasisActions :: ActionResetTankMode()                        
 {
   mode = EMP;
   ActionStopTank();
   ActionPutOutTheLight();
-  resetFunc();
 }
 
 void ChasisActions :: ActionMoveTankForward()       
@@ -37,8 +37,8 @@ void ChasisActions :: ActionTurnTankLeft()
 {
   while(millis() - dTtemp < DALAY_TIME)
   {
-    motor->chooseMotor(LEFT_MOTOR, motorBACKWARD, 210);
-    motor->chooseMotor(RIGHT_MOTOR, motorFORWARD, 210);
+    motor->chooseMotor(LEFT_MOTOR, motorBACKWARD, tankSpeed + 20);
+    motor->chooseMotor(RIGHT_MOTOR, motorFORWARD, tankSpeed + 20);
   }  
   if(mode == FWD)
   {
@@ -58,8 +58,8 @@ void ChasisActions :: ActionTurnTankRight()
 {
   while(millis() - dTtemp < DALAY_TIME)
   {
-    motor->chooseMotor(LEFT_MOTOR, motorFORWARD, 210);
-    motor->chooseMotor(RIGHT_MOTOR, motorBACKWARD, 210);
+    motor->chooseMotor(LEFT_MOTOR, motorFORWARD, tankSpeed + 20);
+    motor->chooseMotor(RIGHT_MOTOR, motorBACKWARD, tankSpeed + 20);
   }
   if(mode == FWD)
   {
@@ -79,8 +79,8 @@ void ChasisActions :: ActionTurnTankBack()
 {
   while(millis() - dTtemp < DALAY_TIME*2)
   {
-    motor->chooseMotor(LEFT_MOTOR, motorFORWARD, 210);
-    motor->chooseMotor(RIGHT_MOTOR, motorBACKWARD, 210);
+    motor->chooseMotor(LEFT_MOTOR, motorFORWARD, tankSpeed + 20);
+    motor->chooseMotor(RIGHT_MOTOR, motorBACKWARD, tankSpeed + 20);
   }  
   if(mode == FWD)
   {
@@ -99,35 +99,29 @@ void ChasisActions :: ActionTurnTankBack()
 void ChasisActions :: ActionSpeedUpTank()     
 {
   tankSpeed += 5;
-  if(tankSpeed > 250)tankSpeed = 250;
-  if (tankDirection != 0)
-  {
-    if (tankDirection == motorFORWARD)
+  if(tankSpeed > 250)tankSpeed = 250;  
+    if (mode == FWD)
     {
       ActionMoveTankForward();
     }
-    else
+    else if(mode != BWD)
     {
       ActionMoveTankBackward();
     }
-  }
 }
 
 void ChasisActions :: ActionSlowDownTank()        
 {
   tankSpeed -= 5;
   if(tankSpeed < 150)tankSpeed = 150;
-  if (tankDirection !=0)
-  {
-    if (tankDirection == motorFORWARD)
+   if (mode == FWD)
     {
       ActionMoveTankForward();
     }
-    else
+    else if(mode != BWD)
     {
       ActionMoveTankBackward();
     }
-  }
 }
 
 void ChasisActions :: ActionTurnOnTheLight()                     

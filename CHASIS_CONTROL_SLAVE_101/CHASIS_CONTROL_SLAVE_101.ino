@@ -3,29 +3,27 @@
 #include <Wire.h>
 #include <avr/sleep.h>
 
-#define EMP 0                         // 0 - НИЧЕГО, НУЛЬ
-#define SLEEP 2                       // 2 - отправить контроллеры в сон SLEEP
-#define WUP 3                         // 3 - разбудить контроллеры WAKE UP
-#define RST 9                         // 9 - комманда RESET
-#define STP 10                        // 10 - СТОП
-#define FWD 11                        // 11 - ВПЕРЕД
-#define BWD 12                        // 12 - НАЗАД
-#define SPU 15                        // 15 - УСКОРИТЬ
-#define SDN 16                        // 16 - ЗАМЕДЛИТЬ
-#define LFT 21                        // 21 - поворот НАЛЕВО
-#define RGT 22                        // 22 - поворот НАПРАВО
-#define TBK 23                        // 23 - РАЗВОРОТ на 180
-#define TLT 31                        // 31 - ВКЛЮЧИТЬ СВЕТ
-#define PLT 32                        // 32 - ВЫКЛЮЧИТЬ СВЕТ
-#define SHB 33                        // 33 - сделать подсветку ЯРЧЕ
-#define SHD 34                        // 34 - сделать подсветку ТУСКЛЕЕ
-#define SUNON 41                      // 41 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН
-#define SUNOFF 42                     // 42 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН 
+#define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
+#define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
+#define WUP 103                         // 103 - разбудить контроллеры WAKE UP
+#define RST 109                         // 109 - комманда RESET
+#define STP 110                        // 110 - СТОП
+#define FWD 111                        // 111 - ВПЕРЕД
+#define BWD 112                        // 112 - НАЗАД
+#define SPU 115                        // 115 - УСКОРИТЬ
+#define SDN 116                        // 116 - ЗАМЕДЛИТЬ
+#define LFT 121                        // 121 - поворот НАЛЕВО
+#define RGT 122                        // 122 - поворот НАПРАВО
+#define TBK 123                        // 123 - РАЗВОРОТ на 180
+#define TLT 131                        // 131 - ВКЛЮЧИТЬ СВЕТ
+#define PLT 132                        // 132 - ВЫКЛЮЧИТЬ СВЕТ
+#define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
+#define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
 
-#define THIS_SLAVE_DEVICE_NUMBER 101  // I2C-номер данного устройства
+#define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
 #define DALAY_TIME 150                // время задержки по умолчанию 150мс
-#define MINIMAL_MOTOR_AMPERAGE 14     // значение соответствует напряжению xV
-#define MAXIMAL_MOTOR_AMPERAGE 16     // значение соответствует напряжению yV
+#define MINIMAL_MOTOR_AMPERAGE 10     // значение соответствует напряжению xV
+#define MAXIMAL_MOTOR_AMPERAGE 13     // значение соответствует напряжению yV
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
 #define RIGHT_MOTOR 2                 // двигатель №2 - правый
 #define LED 3                         // двигатель №3 - светодиод
@@ -54,15 +52,17 @@
 #define INTERRUPT_PIN 3                           // пин для отработки прерывания Выход из Сна
 #define VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN A0      // вольтметр питания левого двигателя
 #define VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN A1     // вольтметр питания правого двигателя
+#define SDA A4
+#define SCL A5
 
 byte mode = 0;                                    //последний режим
-int tankSpeed = 180;                                //для проверки скорости танка
 byte tankDirection = 0;                           //для проверки направления движения
 int lightBrightness = 0;                          // сила подсветки
 int sunBrightness = 0;                            // освещенность солнцем
 unsigned long dTtemp = 0;                         // задержка времени в Actions()
 unsigned long dTloopGeneral = 0;                  // задержка времени в loop()
 byte engineTorqueRatio = 40;                      // разница передачи ШИМ сигнала на двигателя
+volatile int tankSpeed;
 
 class ChasisActions
 {
@@ -101,26 +101,24 @@ Motor *motor;
 
 void setup()
 {
+  //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
-  pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT);
-  Serial.begin(9600);
+  pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT); 
+  tankSpeed = 180;
 }
-
-void(*resetFunc) (void) = 0;
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
 {
   byte in_data = Wire.read();
   interrupts();
-  ChooseAction(in_data);
-  Serial.println(in_data);
+  ChooseAction(in_data);  
 }
 
 void loop()
-{
-  if(millis() - dTloopGeneral > 1000)
+{ 
+  if(millis() - dTloopGeneral > 2500)
   {
     dTloopGeneral = millis();
     GetSpeedDependence();
@@ -130,19 +128,20 @@ void loop()
 void WakeUpNow()                      //обработка прерывания на порте D3
 {}
 
-void ChooseAction(byte in_data)       // выбор действия в зависимости от полученой команды
+void ChooseAction(byte cmd)           // выбор действия в зависимости от полученой команды
 {
+  //Serial.println(cmd);
   dTtemp = millis();
-  switch (in_data)
+  switch (cmd)
   {
     case EMP:                         
       mode = EMP;
       break;  
     case RST:                               
       action->ActionResetTankMode();
-      resetFunc(); 
       break;  
     case SLEEP:
+      action->ActionResetTankMode();
       ActionSetControlerToSleep();    
       break;      
     case STP:                              
@@ -184,30 +183,33 @@ void ChooseAction(byte in_data)       // выбор действия в зави
     default:
       break;      
   }  
-  in_data = EMP;
+  cmd = EMP;
 }
 
 void GetSpeedDependence()
 {
     float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
     float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
-
-    if(amperageLeftMotor < MINIMAL_MOTOR_AMPERAGE &&
-        amperageRightMotor < MINIMAL_MOTOR_AMPERAGE)
-    {                                   //логика такова, если этот показатель уменьшается, значит нагрузка на двигатель низкая, мощность можно снизить в целях экономии энергии
-      action->ActionSlowDownTank();
-    }
-    else if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
+    
+    //Serial.print("amperageLeftMotor-> "); Serial.println(amperageLeftMotor);
+    //Serial.print("amperageRightMotor-> "); Serial.println(amperageRightMotor);
+    
+    if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
               amperageRightMotor > MAXIMAL_MOTOR_AMPERAGE)
-    {                                   //логика такова, если этот показатель повышается, значит двигатель сильно нагружен, нужно подать большую мощность
-      action->ActionSpeedUpTank();
+    {  
+      action->ActionStopTank();                        
+      action->ActionMoveTankBackward();
+      delay(5);  
+      action->ActionTurnTankLeft();
+      delay(5);  
+      action->ActionMoveTankForward();
     }
 }
 
 float GetMotorVoltage(byte motorNumber)
 {
   float data = 0;
-  byte avarage = 100;
+  byte avarage = 50;
   switch(motorNumber)
   {
     case 1:     
@@ -227,14 +229,12 @@ float GetMotorVoltage(byte motorNumber)
 }
 
 void ActionSetControlerToSleep()                  // отправить устройство в сон
-{  
-  action->ActionStopTank();
-  action->ActionPutOutTheLight();
+{
+  mode = SLEEP;
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);   
   sleep_enable();
   pinMode(INTERRUPT_PIN, INPUT);
   attachInterrupt(1,WakeUpNow, LOW);
-  mode = SLEEP;
   sleep_mode();
                 //отслюда после пробуждения
   sleep_disable();

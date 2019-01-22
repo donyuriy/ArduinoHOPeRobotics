@@ -21,11 +21,12 @@
   
   void BatteryClass :: CheckBatteryVoltage()                                      //проверить заряд БАТАРЕИ
   {
+    //Serial.println("CheckBatteryVoltage");
     if (GetBattaryVoltage() <= LOWEST_BATTERY_CHARGE)
     {
       sendCommand->StopTankCmd();
       sendCommand->SetSleepModeCmd();
-      SleepNow();
+      //SleepNow();
     }
     if (GetBattaryVoltage() <= LOW_BATTERY_CHARGE)
     { 
@@ -46,6 +47,7 @@
   
   void BatteryClass :: ActionSolarBatteryOn()                                     //включить Солнечную батарею
   { 
+    //Serial.println("ActionSolarBatteryOn");
     verticalSunBattery_angle = servoSunBatteryVertical.read();
     horizontalSunBattery_angle = servoSunBatteryHorizontal.read();
     SearchHorizontalSolar();    
@@ -111,10 +113,11 @@
     }
   }
   
-  void BatteryClass :: SetUpSolarBattery()                                                          // установка солнечной панели в положение по умолчанию
+  void BatteryClass :: SetUpSolarBattery(Servo servoSunBatteryVertical, Servo servoSunBatteryHorizontal)                                                          // установка солнечной панели в положение по умолчанию
   {
-    byte X = MIN_SOLAR_VERTICAL_ANGLE + 60;
-    byte Y = MAX_SOLAR_HORIZONTAL_ANGLE - 90;
+    //Serial.println("SetUpSolarBattery");
+    byte X = MIN_SOLAR_VERTICAL_ANGLE + 50;
+    byte Y = MAX_SOLAR_HORIZONTAL_ANGLE - 80;
     if (servoSunBatteryVertical.read() -  X > 3 || servoSunBatteryVertical.read() -  X < -3)
     {
       RunServos(servoSunBatteryVertical.read(), X, servoSunBatteryVertical);
@@ -127,7 +130,9 @@
   
   void BatteryClass :: ActionSolarBatteryOff()                                                        //отключить Солнечную батарею
   {
-    SetUpSolarBattery();
+    //Serial.println("ActionSolarBatteryOff");
+    SetUpSolarBattery(servoSunBatteryVertical, servoSunBatteryHorizontal);
+    WakeUpShields();
     globalMode = EMP;
     extraMode = STP;
   }
@@ -135,7 +140,7 @@
   float BatteryClass :: GetPhotoSensorData(byte sensorID)                                               // получить показания с аналогового фотосенсора № 1 или 2
   {
     int data = 0;
-    byte avarage = 25;
+    byte avarage = 20;
     switch (sensorID)
     {
       case 1:
@@ -164,7 +169,7 @@
 
 void BatteryClass :: RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo)                     // замедленный поворот сервоприводов
 {
-  int delayInterval = 10;
+  int delayInterval = 5;
   if (ServoStartAngle < ServoFinishAngle)
   {
     for (byte i = ServoStartAngle; i < ServoFinishAngle; i++)
