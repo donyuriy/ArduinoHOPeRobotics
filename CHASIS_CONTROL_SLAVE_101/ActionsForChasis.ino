@@ -7,7 +7,6 @@ void ChasisActions :: ActionResetTankMode()
   mode = EMP;
   ActionStopTank();
   ActionPutOutTheLight();
-  resetFunc();
 }
 
 void ChasisActions :: ActionMoveTankForward()       

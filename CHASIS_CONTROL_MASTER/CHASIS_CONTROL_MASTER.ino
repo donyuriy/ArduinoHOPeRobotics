@@ -120,7 +120,7 @@ Servo servoSunBatteryHorizontal;
 void setup()
 {
   //Serial.begin(9600);
-  Wire.begin(); 
+  Wire.begin();
   pinMode(ULTRASOUND_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_SENSOR_ECHO_PIN, INPUT);
   pinMode(OUTPUT_WAKEUP_INTERRUPT_PIN, OUTPUT);
@@ -136,18 +136,19 @@ void setup()
   servoUltrasoundSensor.attach(SERVO_ULTRASOUND_SENSOR_PIN);
   servoSunBatteryVertical.attach(SERVO_SUN_BATTERY_MOTOR_1);
   servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);  
-  attachInterrupt(0, SoundProcessing, CHANGE);  
+  attachInterrupt(0, SoundProcessing, CHANGE);    
 }
 
 void loop()
 { 
+  if(millis() < 1000)sendCommand->ResetCmd();
+  
   if(globalMode != SUNON)
-  {
-    //SpeedCorrection();  
+  {      
     CheckForObstackles();
   }
 
-  if (millis() - dTlight > 1000)
+  if (millis() - dTlight > 2000)
   {
     dTlight = millis();
     TurnOnOffLight();     
@@ -184,9 +185,8 @@ void WakeUpNow()                                       //обработка пр
 void EnableSleepingMode()                               //режим сна через 60 секунд
 {
   unsigned long timeDelay = millis();  
-  while (millis() - timeDelay < 20000)
-  {
-    //SpeedCorrection();  
+  while (millis() - timeDelay < 60000)
+  { 
     CheckForObstackles();
     if (millis() - dTlight > 1000)
     {
@@ -226,7 +226,7 @@ void SleepNow()                                         //режим сна
 void WakeUpShields()                                      // послать сигнал проснуться на другие контроллеры
 {
   digitalWrite(OUTPUT_WAKEUP_INTERRUPT_PIN, 1);
-  delayMicroseconds(10000);
+  delay(10);
   digitalWrite(OUTPUT_WAKEUP_INTERRUPT_PIN, 0);
 }
 
@@ -256,34 +256,10 @@ bool IsParkedForSleep()                                   // парковка
   return true;
 }
 
-void SpeedCorrection()
-{
-  unsigned long startTime = millis();
-  servoUltrasoundSensor.write(100);
-  delay(200);
-  float distanceForward1 = GetDistanceInCentimeters(); 
-  delay(50);
-  float distanceForward2 = GetDistanceInCentimeters();
-  unsigned long deltaTime = (millis() - startTime);
-  float dDistance = abs(distanceForward1 - distanceForward2); 
-  
-  if(dDistance*1000/deltaTime > 25)
-  {    
-    sendCommand->SlowDownCmd();
-  }
-  if(dDistance*1000/deltaTime > 20)
-  {
-    sendCommand->SlowDownCmd();
-  }
-  else if(dDistance*1000/deltaTime < 16)
-  {
-    sendCommand->SpeedUpCmd();
-  }
-}
-
 void CheckForObstackles()                                // поиск препятствий
 {
   //Serial.println("CheckForObstackles");
+  
   bool irSensor1_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_1_PIN);
   bool irSensor2_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_2_PIN);
   bool irSensor3_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_3_PIN);
@@ -302,24 +278,42 @@ void CheckForObstackles()                                // поиск преп�
   {
     sendCommand->TurnLeftCmd();
   }
-
+  
   servoUltrasoundSensor.write(100);
-  delay(200);
+  delay(300);
   float distanceForward = GetDistanceInCentimeters();
   
   if (distanceForward < 35)
   {
     sendCommand->StopTankCmd();
     TurnRightOrLeft();
-  }
-  if (distanceForward < 20)
-  {
-    sendCommand->StopTankCmd();
-    sendCommand->MoveBackCmd();
-  }
+  }  
   else
   {
     sendCommand->MoveForwardCmd();
+  }  
+}
+
+void SpeedCorrection()
+{  
+  unsigned long startTime = millis(); 
+  float distanceForward1 = GetDistanceInCentimeters(); 
+  delay(50);
+  float distanceForward2 = GetDistanceInCentimeters();
+  unsigned long deltaTime = (millis() - startTime);
+  float dDistance = abs(distanceForward1 - distanceForward2); 
+  
+  if(dDistance*1000/deltaTime > 25)
+  {    
+    sendCommand->SlowDownCmd();
+  }
+  if(dDistance*1000/deltaTime > 20)
+  {
+    sendCommand->SlowDownCmd();
+  }
+  else if(dDistance*1000/deltaTime < 17)
+  {
+    sendCommand->SpeedUpCmd();
   }
 }
 
@@ -336,10 +330,10 @@ void TurnRightOrLeft()                                // выбор сторон
     actionsCounter = 0;
   }
   servoUltrasoundSensor.write(20);
-  delay(250);
+  delay(300);
   float distanceRight = GetDistanceInCentimeters();
   servoUltrasoundSensor.write(180);
-  delay(250);
+  delay(300);
   float distanceLeft = GetDistanceInCentimeters();
   servoUltrasoundSensor.write(100);
 
@@ -352,7 +346,7 @@ void TurnRightOrLeft()                                // выбор сторон
     sendCommand->TurnRightCmd();
     actionsCounter ++;
   }
-  else
+  else if(distanceRight <= distanceLeft)
   {
     sendCommand->TurnLeftCmd();
     actionsCounter ++;

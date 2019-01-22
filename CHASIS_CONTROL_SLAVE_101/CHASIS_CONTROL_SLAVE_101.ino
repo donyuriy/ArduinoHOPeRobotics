@@ -22,8 +22,8 @@
 
 #define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
 #define DALAY_TIME 150                // время задержки по умолчанию 150мс
-#define MINIMAL_MOTOR_AMPERAGE 14     // значение соответствует напряжению xV
-#define MAXIMAL_MOTOR_AMPERAGE 16     // значение соответствует напряжению yV
+#define MINIMAL_MOTOR_AMPERAGE 10     // значение соответствует напряжению xV
+#define MAXIMAL_MOTOR_AMPERAGE 13     // значение соответствует напряжению yV
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
 #define RIGHT_MOTOR 2                 // двигатель №2 - правый
 #define LED 3                         // двигатель №3 - светодиод
@@ -55,16 +55,14 @@
 #define SDA A4
 #define SCL A5
 
-volatile byte mode = 0;                           //последний режим
-volatile byte in_data = 0;
-
+byte mode = 0;                                    //последний режим
 byte tankDirection = 0;                           //для проверки направления движения
 int lightBrightness = 0;                          // сила подсветки
 int sunBrightness = 0;                            // освещенность солнцем
 unsigned long dTtemp = 0;                         // задержка времени в Actions()
 unsigned long dTloopGeneral = 0;                  // задержка времени в loop()
 byte engineTorqueRatio = 40;                      // разница передачи ШИМ сигнала на двигателя
-int tankSpeed;
+volatile int tankSpeed;
 
 class ChasisActions
 {
@@ -111,35 +109,39 @@ void setup()
   tankSpeed = 180;
 }
 
-void(* resetFunc) (void) = 0;
-
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
 {
   byte in_data = Wire.read();
   interrupts();
-  ChooseAction(in_data);
-  //Serial.println(in_data);
+  ChooseAction(in_data);  
 }
 
 void loop()
-{}
+{ 
+  if(millis() - dTloopGeneral > 2500)
+  {
+    dTloopGeneral = millis();
+    GetSpeedDependence();
+  }
+}
 
 void WakeUpNow()                      //обработка прерывания на порте D3
 {}
 
-void ChooseAction(byte in_data)       // выбор действия в зависимости от полученой команды
+void ChooseAction(byte cmd)           // выбор действия в зависимости от полученой команды
 {
+  //Serial.println(cmd);
   dTtemp = millis();
-  switch (in_data)
+  switch (cmd)
   {
     case EMP:                         
       mode = EMP;
       break;  
     case RST:                               
       action->ActionResetTankMode();
-      resetFunc(); 
       break;  
     case SLEEP:
+      action->ActionResetTankMode();
       ActionSetControlerToSleep();    
       break;      
     case STP:                              
@@ -181,30 +183,33 @@ void ChooseAction(byte in_data)       // выбор действия в зави
     default:
       break;      
   }  
-  in_data = EMP;
+  cmd = EMP;
 }
 
 void GetSpeedDependence()
 {
     float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
     float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
-
-    if(amperageLeftMotor < MINIMAL_MOTOR_AMPERAGE &&
-        amperageRightMotor < MINIMAL_MOTOR_AMPERAGE)
-    {                                   //логика такова, если этот показатель уменьшается, значит нагрузка на двигатель низкая, мощность можно снизить в целях экономии энергии
-      action->ActionSlowDownTank();
-    }
-    else if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
+    
+    //Serial.print("amperageLeftMotor-> "); Serial.println(amperageLeftMotor);
+    //Serial.print("amperageRightMotor-> "); Serial.println(amperageRightMotor);
+    
+    if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
               amperageRightMotor > MAXIMAL_MOTOR_AMPERAGE)
-    {                                   //логика такова, если этот показатель повышается, значит двигатель сильно нагружен, нужно подать большую мощность
-      action->ActionSpeedUpTank();
+    {  
+      action->ActionStopTank();                        
+      action->ActionMoveTankBackward();
+      delay(5);  
+      action->ActionTurnTankLeft();
+      delay(5);  
+      action->ActionMoveTankForward();
     }
 }
 
 float GetMotorVoltage(byte motorNumber)
 {
   float data = 0;
-  byte avarage = 100;
+  byte avarage = 50;
   switch(motorNumber)
   {
     case 1:     

@@ -140,7 +140,7 @@
   float BatteryClass :: GetPhotoSensorData(byte sensorID)                                               // получить показания с аналогового фотосенсора № 1 или 2
   {
     int data = 0;
-    byte avarage = 25;
+    byte avarage = 20;
     switch (sensorID)
     {
       case 1:
