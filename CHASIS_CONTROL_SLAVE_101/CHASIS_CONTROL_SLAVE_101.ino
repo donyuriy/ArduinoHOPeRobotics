@@ -22,8 +22,8 @@
 
 #define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
 #define DALAY_TIME 150                // время задержки по умолчанию 150мс
-#define MINIMAL_MOTOR_AMPERAGE 10     // значение соответствует напряжению xV
-#define MAXIMAL_MOTOR_AMPERAGE 13     // значение соответствует напряжению yV
+#define MINIMAL_MOTOR_AMPERAGE 9     // значение соответствует напряжению xV
+#define MAXIMAL_MOTOR_AMPERAGE 12     // значение соответствует напряжению yV
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
 #define RIGHT_MOTOR 2                 // двигатель №2 - правый
 #define LED 3                         // двигатель №3 - светодиод

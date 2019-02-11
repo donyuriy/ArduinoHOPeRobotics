@@ -25,8 +25,7 @@
     if (GetBattaryVoltage() <= LOWEST_BATTERY_CHARGE)
     {
       sendCommand->StopTankCmd();
-      sendCommand->SetSleepModeCmd();
-      //SleepNow();
+      sendCommand->SetSleepModeCmd();      
     }
     if (GetBattaryVoltage() <= LOW_BATTERY_CHARGE)
     { 
@@ -169,7 +168,7 @@
 
 void BatteryClass :: RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo)                     // замедленный поворот сервоприводов
 {
-  int delayInterval = 5;
+  int delayInterval = 7;
   if (ServoStartAngle < ServoFinishAngle)
   {
     for (byte i = ServoStartAngle; i < ServoFinishAngle; i++)

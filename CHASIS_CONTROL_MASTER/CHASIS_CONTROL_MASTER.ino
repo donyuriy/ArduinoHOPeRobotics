@@ -136,13 +136,15 @@ void setup()
   servoUltrasoundSensor.attach(SERVO_ULTRASOUND_SENSOR_PIN);
   servoSunBatteryVertical.attach(SERVO_SUN_BATTERY_MOTOR_1);
   servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);  
-  attachInterrupt(0, SoundProcessing, CHANGE);    
+  attachInterrupt(0, SoundProcessing, CHANGE); 
+  delay(100);
+  //initial setup
+  sendCommand->ResetCmd();   
+  bc->CheckBatteryVoltage();
 }
 
 void loop()
-{ 
-  if(millis() < 1000)sendCommand->ResetCmd();
-  
+{   
   if(globalMode != SUNON)
   {      
     CheckForObstackles();
@@ -184,6 +186,7 @@ void WakeUpNow()                                       //обработка пр
 
 void EnableSleepingMode()                               //режим сна через 60 секунд
 {
+  //Serial.println("EnableSleepingMode");
   unsigned long timeDelay = millis();  
   while (millis() - timeDelay < 60000)
   { 
@@ -202,12 +205,12 @@ void EnableSleepingMode()                               //режим сна че
     {
       return;
     }
-    //SleepNow();
+    SleepNow();
   }
 }
 
 void SleepNow()                                         //режим сна
-{
+{  
   //Serial.println("SleepNow");
   sendCommand->SetSleepModeCmd();
   delay(1000);
@@ -225,6 +228,7 @@ void SleepNow()                                         //режим сна
 
 void WakeUpShields()                                      // послать сигнал проснуться на другие контроллеры
 {
+  //Serial.println("WakeUpShields");
   digitalWrite(OUTPUT_WAKEUP_INTERRUPT_PIN, 1);
   delay(10);
   digitalWrite(OUTPUT_WAKEUP_INTERRUPT_PIN, 0);
@@ -233,7 +237,7 @@ void WakeUpShields()                                      // послать си
 bool IsParkedForSleep()                                   // парковка
 {
   servoUltrasoundSensor.write(100);
-  delay(100);
+  delay(200);
   float distanceForward = GetDistanceInCentimeters();
   while (distanceForward > 35)
   {
@@ -267,15 +271,18 @@ void CheckForObstackles()                                // поиск преп�
   if ((irSensor1_ObstacleFound && irSensor2_ObstacleFound)
       || (irSensor3_ObstacleFound && irSensor4_ObstacleFound))
   {
+    //Serial.println("IR: 1&&2&&3&&4");
     sendCommand->StopTankCmd();
     TurnRightOrLeft();
   }
   else if (irSensor1_ObstacleFound || irSensor3_ObstacleFound)
   {
+     //Serial.println("(irSensor1_ObstacleFound || irSensor3_ObstacleFound)");
     sendCommand->TurnRightCmd();
   }
   else if (irSensor2_ObstacleFound || irSensor4_ObstacleFound)
   {
+    //Serial.println("(irSensor2_ObstacleFound || irSensor4_ObstacleFound)");
     sendCommand->TurnLeftCmd();
   }
   
@@ -283,42 +290,27 @@ void CheckForObstackles()                                // поиск преп�
   delay(300);
   float distanceForward = GetDistanceInCentimeters();
   
+  if (distanceForward < 25)
+  {
+    sendCommand->StopTankCmd();
+    sendCommand->TurnBackCmd();
+  }
   if (distanceForward < 35)
   {
+    //Serial.println("distanceForward < 35");
     sendCommand->StopTankCmd();
     TurnRightOrLeft();
   }  
   else
   {
+    //Serial.println("sendCommand->MoveForwardCmd();");
     sendCommand->MoveForwardCmd();
   }  
 }
 
-void SpeedCorrection()
-{  
-  unsigned long startTime = millis(); 
-  float distanceForward1 = GetDistanceInCentimeters(); 
-  delay(50);
-  float distanceForward2 = GetDistanceInCentimeters();
-  unsigned long deltaTime = (millis() - startTime);
-  float dDistance = abs(distanceForward1 - distanceForward2); 
-  
-  if(dDistance*1000/deltaTime > 25)
-  {    
-    sendCommand->SlowDownCmd();
-  }
-  if(dDistance*1000/deltaTime > 20)
-  {
-    sendCommand->SlowDownCmd();
-  }
-  else if(dDistance*1000/deltaTime < 17)
-  {
-    sendCommand->SpeedUpCmd();
-  }
-}
-
 void TurnRightOrLeft()                                // выбор стороны поворота
 {
+  //Serial.println("TurnRightOrLeft");
   if (millis() - dTforUSsensor > 7000)
   {
     dTforUSsensor = millis();
@@ -337,16 +329,16 @@ void TurnRightOrLeft()                                // выбор сторон
   float distanceLeft = GetDistanceInCentimeters();
   servoUltrasoundSensor.write(100);
 
-  if (distanceRight < 30 && distanceLeft < 30)
+  if(distanceRight < 30 && distanceLeft < 30)
   {
-    sendCommand->MoveBackCmd();
-  }
-  if (distanceRight > distanceLeft)
+    sendCommand->TurnBackCmd();
+  }  
+  else if (distanceRight > distanceLeft)
   {
     sendCommand->TurnRightCmd();
     actionsCounter ++;
   }
-  else if(distanceRight <= distanceLeft)
+  else 
   {
     sendCommand->TurnLeftCmd();
     actionsCounter ++;
@@ -355,6 +347,7 @@ void TurnRightOrLeft()                                // выбор сторон
 
 float GetDistanceInCentimeters()                       //получить расстояние с ультрозв. датчика
 {
+  //Serial.println("GetDistanceInCentimeters");
   digitalWrite(ULTRASOUND_SENSOR_TRIGGER_PIN, LOW);
   delayMicroseconds(5);
   digitalWrite(ULTRASOUND_SENSOR_TRIGGER_PIN, HIGH);
@@ -363,6 +356,7 @@ float GetDistanceInCentimeters()                       //получить рас
   int distance = (pulseIn(ULTRASOUND_SENSOR_ECHO_PIN, HIGH)) / 58.2;
   if (distance > 200)distance = 200;
   if (distance < 5)distance = 5;
+  //Serial.println(distance);
   return distance;
 }
 
