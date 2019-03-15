@@ -112,11 +112,11 @@
     }
   }
   
-  void BatteryClass :: SetUpSolarBattery(Servo servoSunBatteryVertical, Servo servoSunBatteryHorizontal)                                                          // установка солнечной панели в положение по умолчанию
+  void BatteryClass :: SetUpSolarBattery(Servo servoSunBatteryVertical, Servo servoSunBatteryHorizontal)         // установка солнечной панели в положение по умолчанию
   {
     //Serial.println("SetUpSolarBattery");
-    byte X = MIN_SOLAR_VERTICAL_ANGLE + 50;
-    byte Y = MAX_SOLAR_HORIZONTAL_ANGLE - 80;
+    byte X = MIN_SOLAR_VERTICAL_ANGLE;
+    byte Y = MIN_SOLAR_HORIZONTAL_ANGLE + 10;
     if (servoSunBatteryVertical.read() -  X > 3 || servoSunBatteryVertical.read() -  X < -3)
     {
       RunServos(servoSunBatteryVertical.read(), X, servoSunBatteryVertical);
@@ -127,7 +127,7 @@
     }    
   }
   
-  void BatteryClass :: ActionSolarBatteryOff()                                                        //отключить Солнечную батарею
+  void BatteryClass :: ActionSolarBatteryOff()     //отключить Солнечную батарею
   {
     //Serial.println("ActionSolarBatteryOff");
     SetUpSolarBattery(servoSunBatteryVertical, servoSunBatteryHorizontal);
@@ -136,7 +136,7 @@
     extraMode = STP;
   }
   
-  float BatteryClass :: GetPhotoSensorData(byte sensorID)                                               // получить показания с аналогового фотосенсора № 1 или 2
+  float BatteryClass :: GetPhotoSensorData(byte sensorID)     // получить показания с аналогового фотосенсора № 1 или 2
   {
     int data = 0;
     byte avarage = 20;

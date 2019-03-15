@@ -61,7 +61,7 @@ int lightBrightness = 0;                          // сила подсветки
 int sunBrightness = 0;                            // освещенность солнцем
 unsigned long dTtemp = 0;                         // задержка времени в Actions()
 unsigned long dTloopGeneral = 0;                  // задержка времени в loop()
-byte engineTorqueRatio = 40;                      // разница передачи ШИМ сигнала на двигателя
+byte engineTorqueRatio = 37;                      // разница передачи ШИМ сигнала на двигателя
 volatile int tankSpeed;
 
 class ChasisActions
@@ -100,13 +100,13 @@ ChasisActions *action;
 Motor *motor;
 
 void setup()
-{
+{ 
   //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
   pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT); 
-  tankSpeed = 180;
+  tankSpeed = 160;
 }
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
