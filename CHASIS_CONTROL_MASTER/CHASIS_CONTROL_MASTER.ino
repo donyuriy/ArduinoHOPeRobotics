@@ -24,10 +24,6 @@
 #define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН         глобальный
 #define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
 
-#define CENTRAL_US_SENSOR 0
-#define LEFT_US_SENSOR 1
-#define RIGHT_US_SENSOR 2
-
 #define SLAVE_DEVICE_CHASIS 0x65
 #define SLAVE_DEVICE_CAMERA 0x66
 #define LOWEST_BATTERY_CHARGE 2.51                        // значение соответствует напряжению 2.93 вольта 
@@ -148,7 +144,8 @@ void setup()
 }
 
 void loop()
-{   
+{     
+  
   if(globalMode != SUNON)
   {      
     CheckForObstackles();
@@ -177,7 +174,7 @@ void loop()
     {
       EnableSleepingMode();
     }
-  }  
+  }
 }
 
 void SoundProcessing()                                 //обработка прерывания на порте D2, звуковой сенсор
@@ -242,11 +239,11 @@ bool IsParkedForSleep()                                   // парковка
 {
   servoUltrasoundSensor.write(100);
   delay(200);
-  float distanceForward = GetDistanceInCentimeters(CENTRAL_US_SENSOR);
+  float distanceForward = GetDistanceInCentimetersCentralSensor();
   while (distanceForward > 35)
   {
     
-    distanceForward = GetDistanceInCentimeters(CENTRAL_US_SENSOR);
+    distanceForward = GetDistanceInCentimetersCentralSensor();
   }
   sendCommand->StopTankCmd();
   return true;
@@ -254,9 +251,9 @@ bool IsParkedForSleep()                                   // парковка
 
 void CheckForObstackles()                                // поиск препятствий
 {      
-  float distanceLeftDown = GetDistanceInCentimeters(LEFT_US_SENSOR);
+  float distanceLeftDown = GetDistanceInCentimetersLeftSensor();
   //Serial.println("distanceLeftDown: ");  Serial.println(distanceLeftDown);
-  float distanceRightDown = GetDistanceInCentimeters(RIGHT_US_SENSOR);
+  float distanceRightDown = GetDistanceInCentimetersRightSensor();
   //Serial.println("distanceRightDown: ");  Serial.println(distanceRightDown);
 
   if(distanceLeftDown < 10 || distanceRightDown < 10)
@@ -278,7 +275,7 @@ void CheckForObstackles()                                // поиск преп�
   
   servoUltrasoundSensor.write(100);
   delay(300);
-  float distanceForward = GetDistanceInCentimeters(CENTRAL_US_SENSOR);
+  float distanceForward = GetDistanceInCentimetersCentralSensor();
   
   if (distanceForward < 25)
   {
@@ -311,10 +308,10 @@ void TurnRightOrLeft()                                // выбор сторон
   }
   servoUltrasoundSensor.write(20);
   delay(300);
-  float distanceRight = GetDistanceInCentimeters(CENTRAL_US_SENSOR);
+  float distanceRight = GetDistanceInCentimetersCentralSensor();
   servoUltrasoundSensor.write(180);
   delay(300);
-  float distanceLeft = GetDistanceInCentimeters(CENTRAL_US_SENSOR);
+  float distanceLeft = GetDistanceInCentimetersCentralSensor();
   servoUltrasoundSensor.write(100);
 
   if(distanceRight < 30 && distanceLeft < 30)
@@ -333,45 +330,43 @@ void TurnRightOrLeft()                                // выбор сторон
   }  
 }
 
-float GetDistanceInCentimeters(byte sensorNumber)                       //получить расстояние с ультрозв. датчика
+float GetDistanceInCentimetersCentralSensor()                       //получить расстояние с ультрозв. датчика
 {
-  int distance = 0;
-  switch(sensorNumber)
-  {
-    case 0:                               // CENTRAL_US_SENSOR 0
-      digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, LOW);
-      delayMicroseconds(5);
-      digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, LOW);
-      distance = (pulseIn(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, HIGH)) / 58.2;
-      break;    
-
-    case 1:                               // LEFT_US_SENSOR 1
-      digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, LOW);
-      delayMicroseconds(5);
-      digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, LOW);
-      distance = (pulseIn(ULTRASOUND_LEFT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
-      break; 
-      
-    case 2:                               // RIGHT_US_SENSOR 2
-      digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, LOW);
-      delayMicroseconds(5);
-      digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, LOW);
-      distance = (pulseIn(ULTRASOUND_RIGHT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
-      break; 
-  }
-  
+  digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, LOW);
+  delayMicroseconds(5);
+  digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, LOW);
+  float distance = (pulseIn(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, HIGH)) / 58.2;     
   if (distance > 200)distance = 200;
   if (distance < 3)distance = 3;
-  //Serial.println(distance);
+  return distance;  
+}
+
+float GetDistanceInCentimetersLeftSensor()
+{
+  digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, LOW);
+  delayMicroseconds(5);
+  digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, LOW);
+  float distance = (pulseIn(ULTRASOUND_LEFT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
+  if (distance > 200)distance = 200;
+  if (distance < 3)distance = 3;
+  return distance; 
+}
+
+float GetDistanceInCentimetersRightSensor()
+{
+  digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, LOW);
+  delayMicroseconds(5);
+  digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, LOW);
+  float distance = (pulseIn(ULTRASOUND_RIGHT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
+  if (distance > 200)distance = 200;
+  if (distance < 3)distance = 3;
   return distance;
-  
-  
 }
 
 void TurnOnOffLight()                                                                 //влючить/выключить свет

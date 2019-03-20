@@ -22,8 +22,7 @@
 
 #define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
 #define DALAY_TIME 150                // время задержки по умолчанию 150мс
-#define MINIMAL_MOTOR_AMPERAGE 9     // значение соответствует напряжению xV
-#define MAXIMAL_MOTOR_AMPERAGE 12     // значение соответствует напряжению yV
+#define MAXIMAL_MOTOR_AMPERAGE 17     // значение соответствует напряжению yV
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
 #define RIGHT_MOTOR 2                 // двигатель №2 - правый
 #define LED 3                         // двигатель №3 - светодиод
@@ -60,8 +59,7 @@ byte tankDirection = 0;                           //для проверки на
 int lightBrightness = 0;                          // сила подсветки
 int sunBrightness = 0;                            // освещенность солнцем
 unsigned long dTtemp = 0;                         // задержка времени в Actions()
-unsigned long dTloopGeneral = 0;                  // задержка времени в loop()
-byte engineTorqueRatio = 37;                      // разница передачи ШИМ сигнала на двигателя
+byte engineTorqueRatio = 38;                      // разница передачи ШИМ сигнала на двигателя
 volatile int tankSpeed;
 
 class ChasisActions
@@ -101,7 +99,7 @@ Motor *motor;
 
 void setup()
 { 
-  //Serial.begin(9600);
+  Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
@@ -117,13 +115,7 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
 }
 
 void loop()
-{ 
-  if(millis() - dTloopGeneral > 2500)
-  {
-    dTloopGeneral = millis();
-    GetSpeedDependence();
-  }
-}
+{ }
 
 void WakeUpNow()                      //обработка прерывания на порте D3
 {}
@@ -184,6 +176,7 @@ void ChooseAction(byte cmd)           // выбор действия в зави
       break;      
   }  
   cmd = EMP;
+  GetSpeedDependence();
 }
 
 void GetSpeedDependence()
@@ -191,10 +184,10 @@ void GetSpeedDependence()
     float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
     float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
     
-    //Serial.print("amperageLeftMotor-> "); Serial.println(amperageLeftMotor);
-    //Serial.print("amperageRightMotor-> "); Serial.println(amperageRightMotor);
+    Serial.print("amperageLeftMotor-> "); Serial.println(amperageLeftMotor);
+    Serial.print("amperageRightMotor-> "); Serial.println(amperageRightMotor);
     
-    if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
+    /*if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
               amperageRightMotor > MAXIMAL_MOTOR_AMPERAGE)
     {  
       action->ActionStopTank();                        
@@ -203,7 +196,17 @@ void GetSpeedDependence()
       action->ActionTurnTankLeft();
       delay(5);  
       action->ActionMoveTankForward();
-    }
+    }*/
+    if(amperageLeftMotor >= MAXIMAL_MOTOR_AMPERAGE &&
+              amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE)
+              {
+                tankSpeed += 10;
+              }
+    if(amperageLeftMotor < MAXIMAL_MOTOR_AMPERAGE &&
+              amperageRightMotor < MAXIMAL_MOTOR_AMPERAGE)
+              {
+                tankSpeed = 160;
+              }
 }
 
 float GetMotorVoltage(byte motorNumber)
