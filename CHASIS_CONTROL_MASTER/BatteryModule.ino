@@ -1,6 +1,15 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------- MASTER (Работа с питанием -> батарея, солнечная панель) ----------------------------------------
 
+  BatteryClass :: BatteryClass(void)
+  {
+    
+  }
+  
+  BatteryClass ::  ~BatteryClass(void)
+  {
+    
+  }
   
   float BatteryClass :: GetBattaryVoltage()                                     //получить усредненное значение напряжения на батарее
   {
@@ -24,13 +33,12 @@
     //Serial.println("CheckBatteryVoltage");
     if (GetBattaryVoltage() <= LOWEST_BATTERY_CHARGE)
     {
-      sendCommand->StopTankCmd();
-      sendCommand->SetSleepModeCmd();
-      //SleepNow();
+      sendCommand.StopTankCmd();
+      sendCommand.SetSleepModeCmd(); 
     }
     if (GetBattaryVoltage() <= LOW_BATTERY_CHARGE)
     { 
-      sendCommand->StopTankCmd();
+      sendCommand.StopTankCmd();
       if (globalMode != SUNON) globalMode = SUNON;
       if (GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY &&
           GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY &&
@@ -113,11 +121,12 @@
     }
   }
   
-  void BatteryClass :: SetUpSolarBattery(Servo servoSunBatteryVertical, Servo servoSunBatteryHorizontal)                                                          // установка солнечной панели в положение по умолчанию
+  void BatteryClass :: SetUpSolarBattery(Servo servoSunBatteryVertical, Servo servoSunBatteryHorizontal)         // установка солнечной панели в положение по умолчанию
   {
     //Serial.println("SetUpSolarBattery");
-    byte X = MIN_SOLAR_VERTICAL_ANGLE + 50;
-    byte Y = MAX_SOLAR_HORIZONTAL_ANGLE - 80;
+    byte X = MIN_SOLAR_VERTICAL_ANGLE;
+    byte Y = MIN_SOLAR_HORIZONTAL_ANGLE + 10;
+
     if (servoSunBatteryVertical.read() -  X > 3 || servoSunBatteryVertical.read() -  X < -3)
     {
       RunServos(servoSunBatteryVertical.read(), X, servoSunBatteryVertical);
@@ -128,7 +137,7 @@
     }    
   }
   
-  void BatteryClass :: ActionSolarBatteryOff()                                                        //отключить Солнечную батарею
+  void BatteryClass :: ActionSolarBatteryOff()     //отключить Солнечную батарею
   {
     //Serial.println("ActionSolarBatteryOff");
     SetUpSolarBattery(servoSunBatteryVertical, servoSunBatteryHorizontal);
@@ -137,7 +146,7 @@
     extraMode = STP;
   }
   
-  float BatteryClass :: GetPhotoSensorData(byte sensorID)                                               // получить показания с аналогового фотосенсора № 1 или 2
+  float BatteryClass :: GetPhotoSensorData(byte sensorID)     // получить показания с аналогового фотосенсора № 1 или 2
   {
     int data = 0;
     byte avarage = 20;
@@ -169,7 +178,9 @@
 
 void BatteryClass :: RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo)                     // замедленный поворот сервоприводов
 {
-  int delayInterval = 5;
+
+  int delayInterval = 7;
+
   if (ServoStartAngle < ServoFinishAngle)
   {
     for (byte i = ServoStartAngle; i < ServoFinishAngle; i++)

@@ -1,6 +1,14 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------------ SLAVE 101 ------------------------------------
 
+Motor :: Motor(void)
+{
+}
+
+Motor :: ~Motor(void)
+{
+}
+
 void Motor :: chooseMotor(int motorNumber, int command, int motorSpeed)    // выбор двигетеля
 {
   int motorA, motorB;

@@ -22,8 +22,8 @@
 
 #define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
 #define DALAY_TIME 150                // время задержки по умолчанию 150мс
-#define MINIMAL_MOTOR_AMPERAGE 10     // значение соответствует напряжению xV
-#define MAXIMAL_MOTOR_AMPERAGE 13     // значение соответствует напряжению yV
+#define MAXIMAL_MOTOR_AMPERAGE 17     // значение соответствует напряжению yV
+
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
 #define RIGHT_MOTOR 2                 // двигатель №2 - правый
 #define LED 3                         // двигатель №3 - светодиод
@@ -60,8 +60,7 @@ byte tankDirection = 0;                           //для проверки на
 int lightBrightness = 0;                          // сила подсветки
 int sunBrightness = 0;                            // освещенность солнцем
 unsigned long dTtemp = 0;                         // задержка времени в Actions()
-unsigned long dTloopGeneral = 0;                  // задержка времени в loop()
-byte engineTorqueRatio = 40;                      // разница передачи ШИМ сигнала на двигателя
+byte engineTorqueRatio = 38;                      // разница передачи ШИМ сигнала на двигателя
 volatile int tankSpeed;
 
 class ChasisActions
@@ -96,17 +95,17 @@ class Motor
     void shiftWrite(int output, int high_low);
 };
 
-ChasisActions *action;
-Motor *motor;
+ChasisActions action;
+Motor motor;
 
 void setup()
-{
+{ 
   //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
-  pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT); 
-  tankSpeed = 180;
+  pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT);
+  tankSpeed = 160;
 }
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
@@ -117,13 +116,7 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
 }
 
 void loop()
-{ 
-  if(millis() - dTloopGeneral > 2500)
-  {
-    dTloopGeneral = millis();
-    GetSpeedDependence();
-  }
-}
+{ }
 
 void WakeUpNow()                      //обработка прерывания на порте D3
 {}
@@ -137,53 +130,54 @@ void ChooseAction(byte cmd)           // выбор действия в зави
     case EMP:                         
       mode = EMP;
       break;  
-    case RST:                               
-      action->ActionResetTankMode();
+    case RST:
+      action.ActionResetTankMode();
       break;  
     case SLEEP:
-      action->ActionResetTankMode();
+      action.ActionResetTankMode();
       ActionSetControlerToSleep();    
       break;      
     case STP:                              
-      action->ActionStopTank();
+      action.ActionStopTank();
       break;
     case FWD:                         
-      action->ActionMoveTankForward();
+      action.ActionMoveTankForward();
       break;
     case BWD:                             
-      action->ActionMoveTankBackward();
+      action.ActionMoveTankBackward();
       break;
     case LFT:                              
-      action->ActionTurnTankLeft();
+      action.ActionTurnTankLeft();
       break;
     case RGT:                         
-      action->ActionTurnTankRight();
+      action.ActionTurnTankRight();
       break;
     case TBK:                         
-      action->ActionTurnTankBack();
+      action.ActionTurnTankBack();
       break;
     case SPU:                         
-      action->ActionSpeedUpTank();
+      action.ActionSpeedUpTank();
       break;
     case SDN:                         
-      action->ActionSlowDownTank();
+      action.ActionSlowDownTank();
       break;
     case TLT:                         
-      action->ActionTurnOnTheLight();
+      action.ActionTurnOnTheLight();
       break;
     case PLT:                         
-      action->ActionPutOutTheLight();
+      action.ActionPutOutTheLight();
       break;
     case SHB:                         
-      action->ActionShineBrighter();
+      action.ActionShineBrighter();
       break;
     case SHD:                         
-      action->ActionShineDimmer();
+      action.ActionShineDimmer();
       break;    
     default:
       break;      
   }  
   cmd = EMP;
+  GetSpeedDependence();
 }
 
 void GetSpeedDependence()
@@ -191,19 +185,19 @@ void GetSpeedDependence()
     float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
     float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
     
-    //Serial.print("amperageLeftMotor-> "); Serial.println(amperageLeftMotor);
-    //Serial.print("amperageRightMotor-> "); Serial.println(amperageRightMotor);
+    Serial.print("amperageLeftMotor. "); Serial.println(amperageLeftMotor);
+    Serial.print("amperageRightMotor. "); Serial.println(amperageRightMotor);
     
-    if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
-              amperageRightMotor > MAXIMAL_MOTOR_AMPERAGE)
-    {  
-      action->ActionStopTank();                        
-      action->ActionMoveTankBackward();
-      delay(5);  
-      action->ActionTurnTankLeft();
-      delay(5);  
-      action->ActionMoveTankForward();
-    }
+    if(amperageLeftMotor >= MAXIMAL_MOTOR_AMPERAGE &&
+              amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE)
+              {
+                tankSpeed += 10;
+              }
+    if(amperageLeftMotor < MAXIMAL_MOTOR_AMPERAGE &&
+              amperageRightMotor < MAXIMAL_MOTOR_AMPERAGE)
+              {
+                tankSpeed = 160;
+              }
 }
 
 float GetMotorVoltage(byte motorNumber)

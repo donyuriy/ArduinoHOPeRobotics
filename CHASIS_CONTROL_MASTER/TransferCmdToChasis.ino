@@ -1,6 +1,15 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------- MASTER (Отправка комманд на другие контроллеры) ----------------------------------------
 
+Command :: Command(void)
+{  
+}
+
+Command :: ~Command(void)
+{  
+}
+
+
 void Command :: SendCommandToChasis(byte cmd)                 //отправка команд на шасси
 {
   Wire.beginTransmission(SLAVE_DEVICE_CHASIS);

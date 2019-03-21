@@ -22,7 +22,8 @@
 #define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
 #define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
 #define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН         глобальный
-#define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный    
+#define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
+
 
 #define SLAVE_DEVICE_CHASIS 0x65
 #define SLAVE_DEVICE_CAMERA 0x66
@@ -36,29 +37,31 @@
 #define MIN_SOLAR_VERTICAL_ANGLE 110                      // минимальный угол поворота по вертикали
 #define MAX_SOLAR_VERTICAL_ANGLE 160                      // максимальный угол поворота по вертикали
 #define MIN_SOLAR_HORIZONTAL_ANGLE 5                      // минимальный угол поворота Солнечной Панели по горизонтали <- |
-#define MAX_SOLAR_HORIZONTAL_ANGLE 170                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
+#define MAX_SOLAR_HORIZONTAL_ANGLE 170                    // максимальный угол поворота Солнечной Панели по горизонтали | .
 
 #define INTERRUPT_0_PIN 2                           // порт для обработки прерываний D2 (interrupt #0)
 #define INTERRUPT_1_PIN 3                           // порт для обработки прерываний D3 (interrupt #1)
-#define IR_OBSATACLE_SENSOR_1_PIN 4                 // ИК-сенсор препятствий 1
-#define IR_OBSATACLE_SENSOR_2_PIN 5                 // ИК-сенсор препятствий 2
-#define IR_OBSATACLE_SENSOR_3_PIN 6                 // ИК-сенсор препятствий 3
-#define IR_OBSATACLE_SENSOR_4_PIN 7                 // ИК-сенсор препятствий 4
+#define ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN 4        // УЗ-ЛЕВЫЙ сенсор расстояния передатчик
+#define ULTRASOUND_LEFT_SENSOR_ECHO_PIN 5           // УЗ-ЛЕВЫЙ сенсор расстояния приёмник
+#define ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN 6       // УЗ-ПРАВЫЙ сенсор расстояния передатчик
+#define ULTRASOUND_RIGHT_SENSOR_ECHO_PIN 7          // УЗ-ПРАВЫЙ сенсор расстояния приёмник
 #define SERVO_SUN_BATTERY_MOTOR_1 8                 // сервопривод управления Солнечной панелью (горизонт)
 #define SERVO_SUN_BATTERY_MOTOR_2 9                 // сервопривод управления Солнечной панелью (вертикаль)
 #define SERVO_ULTRASOUND_SENSOR_PIN 10              // сервопривод управления УЗ-сенсором расстояния
-#define ULTRASOUND_SENSOR_TRIGGER_PIN 11            // УЗ-сенсор расстояния передатчик
-#define ULTRASOUND_SENSOR_ECHO_PIN 12               // УЗ-сенсор расстояния приёмник
+#define ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN 11    // УЗ-ЦЕНТРАЛЬНЫЙ сенсор расстояния передатчик
+#define ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN 12       // УЗ-ЦЕНТРАЛЬНЫЙ сенсор расстояния приёмник
 #define OUTPUT_WAKEUP_INTERRUPT_PIN 13              // для отправки цифрового сигнала для прерывания пробуждения вспомогательных шилдов
+
 #define VOLTMETER_SENSOR_PIN A0                     // вольтметр батареи
 #define SOLAR_SENSOR_PIN_2 A2                       // сенсор освещенности 1
 #define SOLAR_SENSOR_PIN_1 A3                       // сенсор освещенности 2
 #define SOLAR_SENSOR_PIN_3 A1                       // сенсор освещенности 3
 
 unsigned long dTforUSsensor = 0;                   // задержка времени для предотврашения застреваня в узких для поворота местах
-unsigned long dTlight = 0;                         // задержка времени -> ВКЛ/ВЫКЛ освещение
-unsigned long dTvoltage = 0;                       // задержка времени -> проверка заряда батареи
-unsigned long dTsolar = 0;                         // задержка времени -> период перекалибровки положения солнечной панели
+unsigned long dTlight = 0;                         // задержка времени . ВКЛ/ВЫКЛ освещение
+unsigned long dTvoltage = 0;                       // задержка времени . проверка заряда батареи
+unsigned long dTsolar = 0;                         // задержка времени . период перекалибровки положения солнечной панели
+
 byte actionsCounter = 0;                           // количество повторяющихся поворотов за последние N секунд
 byte globalMode = 0;                               // последний установленный режим (см. пометку "глобальный")
 byte extraMode = 0;                                // дополнительный режим
@@ -111,23 +114,27 @@ class BatteryClass
   void RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo);
 };
 
-BatteryClass *bc;
-Command *sendCommand;
+
+BatteryClass bc;
+Command sendCommand;
+
 Servo servoUltrasoundSensor;
 Servo servoSunBatteryVertical;
 Servo servoSunBatteryHorizontal;
 
 void setup()
 {
+
   //Serial.begin(9600);
   Wire.begin();
-  pinMode(ULTRASOUND_SENSOR_TRIGGER_PIN, OUTPUT);
-  pinMode(ULTRASOUND_SENSOR_ECHO_PIN, INPUT);
-  pinMode(OUTPUT_WAKEUP_INTERRUPT_PIN, OUTPUT);
-  pinMode(IR_OBSATACLE_SENSOR_1_PIN, INPUT);
-  pinMode(IR_OBSATACLE_SENSOR_2_PIN, INPUT);
-  pinMode(IR_OBSATACLE_SENSOR_3_PIN, INPUT);
-  pinMode(IR_OBSATACLE_SENSOR_4_PIN, INPUT);
+  pinMode(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, OUTPUT);
+  pinMode(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, INPUT);
+  pinMode(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, OUTPUT);
+  pinMode(ULTRASOUND_LEFT_SENSOR_ECHO_PIN, INPUT);
+  pinMode(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, OUTPUT);
+  pinMode(ULTRASOUND_RIGHT_SENSOR_ECHO_PIN, INPUT);    
+  pinMode(OUTPUT_WAKEUP_INTERRUPT_PIN, OUTPUT);  
+
   pinMode(SOLAR_SENSOR_PIN_1, INPUT);
   pinMode(SOLAR_SENSOR_PIN_2, INPUT);
   pinMode(SOLAR_SENSOR_PIN_3, INPUT);
@@ -135,13 +142,17 @@ void setup()
   pinMode(INTERRUPT_1_PIN, INPUT);
   servoUltrasoundSensor.attach(SERVO_ULTRASOUND_SENSOR_PIN);
   servoSunBatteryVertical.attach(SERVO_SUN_BATTERY_MOTOR_1);
-  servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);  
-  attachInterrupt(0, SoundProcessing, CHANGE);    
+  servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);
+  attachInterrupt(0, SoundProcessing, CHANGE); 
+  delay(100);
+  //initial setup
+  sendCommand.ResetCmd();   
+  bc.CheckBatteryVoltage();
 }
 
 void loop()
-{ 
-  if(millis() < 1000)sendCommand->ResetCmd();
+{     
+
   
   if(globalMode != SUNON)
   {      
@@ -157,17 +168,19 @@ void loop()
   if (millis() - dTvoltage > 10000)
   {
     dTvoltage = millis();
-    bc->CheckBatteryVoltage();
+    bc.CheckBatteryVoltage();
+
     
     if(globalMode == SUNON)
     {
       dTsolar = millis();
-      bc->ActionSolarBatteryOn();
+      bc.ActionSolarBatteryOn();
     }
     
-    if (bc->GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
-        bc->GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
-        bc->GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
+    if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
+        bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
+        bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
+
     {
       EnableSleepingMode();
     }
@@ -184,6 +197,8 @@ void WakeUpNow()                                       //обработка пр
 
 void EnableSleepingMode()                               //режим сна через 60 секунд
 {
+  //Serial.println("EnableSleepingMode");
+
   unsigned long timeDelay = millis();  
   while (millis() - timeDelay < 60000)
   { 
@@ -196,9 +211,10 @@ void EnableSleepingMode()                               //режим сна че
   }
   if (IsParkedForSleep())
   {
-    if (bc->GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
-        bc->GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
-        bc->GetPhotoSensorData(3) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
+    if (bc.GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
+        bc.GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
+        bc.GetPhotoSensorData(3) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
+
     {
       return;
     }
@@ -207,9 +223,9 @@ void EnableSleepingMode()                               //режим сна че
 }
 
 void SleepNow()                                         //режим сна
-{
+{  
   //Serial.println("SleepNow");
-  sendCommand->SetSleepModeCmd();
+  sendCommand.SetSleepModeCmd();
   delay(1000);
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
   sleep_enable();
@@ -225,6 +241,7 @@ void SleepNow()                                         //режим сна
 
 void WakeUpShields()                                      // послать сигнал проснуться на другие контроллеры
 {
+  //Serial.println("WakeUpShields");
   digitalWrite(OUTPUT_WAKEUP_INTERRUPT_PIN, 1);
   delay(10);
   digitalWrite(OUTPUT_WAKEUP_INTERRUPT_PIN, 0);
@@ -233,136 +250,138 @@ void WakeUpShields()                                      // послать си
 bool IsParkedForSleep()                                   // парковка
 {
   servoUltrasoundSensor.write(100);
-  delay(100);
-  float distanceForward = GetDistanceInCentimeters();
+  delay(200);
+  float distanceForward = GetDistanceInCentimetersCentralSensor();
   while (distanceForward > 35)
   {
-    bool irSensor1_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_1_PIN);
-    bool irSensor2_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_2_PIN);
-    bool irSensor3_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_3_PIN);
-    bool irSensor4_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_4_PIN);
-
-    if (irSensor1_ObstacleFound || irSensor3_ObstacleFound)
-    {
-      sendCommand->TurnRightCmd();
-    }
-    else if (irSensor2_ObstacleFound || irSensor4_ObstacleFound)
-    {
-      sendCommand->TurnLeftCmd();
-    }
-    distanceForward = GetDistanceInCentimeters();
+    
+    distanceForward = GetDistanceInCentimetersCentralSensor();
   }
-  sendCommand->StopTankCmd();
+  sendCommand.StopTankCmd();
   return true;
 }
 
 void CheckForObstackles()                                // поиск препятствий
-{
-  //Serial.println("CheckForObstackles");
-  
-  bool irSensor1_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_1_PIN);
-  bool irSensor2_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_2_PIN);
-  bool irSensor3_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_3_PIN);
-  bool irSensor4_ObstacleFound = !digitalRead(IR_OBSATACLE_SENSOR_4_PIN);
-  if ((irSensor1_ObstacleFound && irSensor2_ObstacleFound)
-      || (irSensor3_ObstacleFound && irSensor4_ObstacleFound))
+{      
+  float distanceLeftDown = GetDistanceInCentimetersLeftSensor();
+  //Serial.println("distanceLeftDown: ");  Serial.println(distanceLeftDown);
+  float distanceRightDown = GetDistanceInCentimetersRightSensor();
+  //Serial.println("distanceRightDown: ");  Serial.println(distanceRightDown);
+
+  if(distanceLeftDown < 10 || distanceRightDown < 10)
+
   {
-    sendCommand->StopTankCmd();
-    TurnRightOrLeft();
+    sendCommand.StopTankCmd();    
+    sendCommand.TurnBackCmd();
+    delay(100);
+    sendCommand.StopTankCmd();
+    TurnRightOrLeft(); 
   }
-  else if (irSensor1_ObstacleFound || irSensor3_ObstacleFound)
+  if(distanceLeftDown < 25)
   {
-    sendCommand->TurnRightCmd();
+    sendCommand.TurnRightCmd();
   }
-  else if (irSensor2_ObstacleFound || irSensor4_ObstacleFound)
+  if(distanceRightDown < 25)
   {
-    sendCommand->TurnLeftCmd();
+    sendCommand.TurnLeftCmd();
   }
   
   servoUltrasoundSensor.write(100);
   delay(300);
-  float distanceForward = GetDistanceInCentimeters();
+  float distanceForward = GetDistanceInCentimetersCentralSensor();
   
+  if (distanceForward < 25)
+  {
+    sendCommand.StopTankCmd();
+    sendCommand.TurnBackCmd();
+  }
   if (distanceForward < 35)
   {
-    sendCommand->StopTankCmd();
+    sendCommand.StopTankCmd();
     TurnRightOrLeft();
   }  
   else
-  {
-    sendCommand->MoveForwardCmd();
-  }  
-}
-
-void SpeedCorrection()
-{  
-  unsigned long startTime = millis(); 
-  float distanceForward1 = GetDistanceInCentimeters(); 
-  delay(50);
-  float distanceForward2 = GetDistanceInCentimeters();
-  unsigned long deltaTime = (millis() - startTime);
-  float dDistance = abs(distanceForward1 - distanceForward2); 
-  
-  if(dDistance*1000/deltaTime > 25)
   {    
-    sendCommand->SlowDownCmd();
-  }
-  if(dDistance*1000/deltaTime > 20)
-  {
-    sendCommand->SlowDownCmd();
-  }
-  else if(dDistance*1000/deltaTime < 17)
-  {
-    sendCommand->SpeedUpCmd();
-  }
+    sendCommand.MoveForwardCmd();
+  }   
+
 }
 
 void TurnRightOrLeft()                                // выбор стороны поворота
 {
+  //Serial.println("TurnRightOrLeft");
   if (millis() - dTforUSsensor > 7000)
   {
     dTforUSsensor = millis();
     if (actionsCounter > 5)
     {
-      sendCommand->TurnBackCmd();
-      sendCommand->MoveBackCmd();
+      sendCommand.TurnBackCmd();
+      sendCommand.MoveBackCmd();
     }
     actionsCounter = 0;
   }
   servoUltrasoundSensor.write(20);
   delay(300);
-  float distanceRight = GetDistanceInCentimeters();
+  float distanceRight = GetDistanceInCentimetersCentralSensor();
   servoUltrasoundSensor.write(180);
   delay(300);
-  float distanceLeft = GetDistanceInCentimeters();
+  float distanceLeft = GetDistanceInCentimetersCentralSensor();
   servoUltrasoundSensor.write(100);
 
-  if (distanceRight < 30 && distanceLeft < 30)
+  if(distanceRight < 30 && distanceLeft < 30)
   {
-    sendCommand->MoveBackCmd();
-  }
-  if (distanceRight > distanceLeft)
+    sendCommand.TurnBackCmd();
+  }  
+  else if (distanceRight > distanceLeft)
+
   {
-    sendCommand->TurnRightCmd();
+    sendCommand.TurnRightCmd();
     actionsCounter ++;
   }
-  else if(distanceRight <= distanceLeft)
+  else 
+
   {
-    sendCommand->TurnLeftCmd();
+    sendCommand.TurnLeftCmd();
     actionsCounter ++;
   }  
 }
 
-float GetDistanceInCentimeters()                       //получить расстояние с ультрозв. датчика
+float GetDistanceInCentimetersCentralSensor()                       //получить расстояние с ультрозв. датчика
 {
-  digitalWrite(ULTRASOUND_SENSOR_TRIGGER_PIN, LOW);
+  digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, LOW);
   delayMicroseconds(5);
-  digitalWrite(ULTRASOUND_SENSOR_TRIGGER_PIN, HIGH);
+  digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, HIGH);
   delayMicroseconds(10);
-  digitalWrite(ULTRASOUND_SENSOR_TRIGGER_PIN, LOW);
-  int distance = (pulseIn(ULTRASOUND_SENSOR_ECHO_PIN, HIGH)) / 58.2;
+  digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, LOW);
+  float distance = (pulseIn(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, HIGH)) / 58.2;     
   if (distance > 200)distance = 200;
-  if (distance < 5)distance = 5;
+  if (distance < 3)distance = 3;
+  return distance;  
+}
+
+float GetDistanceInCentimetersLeftSensor()
+{
+  digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, LOW);
+  delayMicroseconds(5);
+  digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, LOW);
+  float distance = (pulseIn(ULTRASOUND_LEFT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
+  if (distance > 200)distance = 200;
+  if (distance < 3)distance = 3;
+  return distance; 
+}
+
+float GetDistanceInCentimetersRightSensor()
+{
+  digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, LOW);
+  delayMicroseconds(5);
+  digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, LOW);
+  float distance = (pulseIn(ULTRASOUND_RIGHT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
+  if (distance > 200)distance = 200;
+  if (distance < 3)distance = 3;
   return distance;
 }
 
@@ -371,16 +390,17 @@ void TurnOnOffLight()                                                           
   //Serial.println("TurnOnOffLight");
   if(globalMode != SUNON)
   {
-    bc->SetUpSolarBattery(servoSunBatteryVertical, servoSunBatteryHorizontal);
+    bc.SetUpSolarBattery(servoSunBatteryVertical, servoSunBatteryHorizontal);
   }
-  if (bc->GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
-      bc->GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
-      bc->GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT )
+  if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
+      bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
+      bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT )
+
   {
-    sendCommand->TurnOnTheLightCmd();
+    sendCommand.TurnOnTheLightCmd();
   }
   else 
   {    
-    sendCommand->PutOutTheLightCmd();
+    sendCommand.PutOutTheLightCmd();
   }
 }
