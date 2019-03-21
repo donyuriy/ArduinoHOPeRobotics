@@ -1,6 +1,15 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------- MASTER (Работа с питанием -> батарея, солнечная панель) ----------------------------------------
 
+  BatteryClass :: BatteryClass(void)
+  {
+    
+  }
+  
+  BatteryClass ::  ~BatteryClass(void)
+  {
+    
+  }
   
   float BatteryClass :: GetBattaryVoltage()                                     //получить усредненное значение напряжения на батарее
   {
@@ -24,12 +33,12 @@
     //Serial.println("CheckBatteryVoltage");
     if (GetBattaryVoltage() <= LOWEST_BATTERY_CHARGE)
     {
-      sendCommand->StopTankCmd();
-      sendCommand->SetSleepModeCmd();      
+      sendCommand.StopTankCmd();
+      sendCommand.SetSleepModeCmd();      
     }
     if (GetBattaryVoltage() <= LOW_BATTERY_CHARGE)
     { 
-      sendCommand->StopTankCmd();
+      sendCommand.StopTankCmd();
       if (globalMode != SUNON) globalMode = SUNON;
       if (GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY &&
           GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY &&

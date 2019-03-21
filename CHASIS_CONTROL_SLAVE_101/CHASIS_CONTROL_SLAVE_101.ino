@@ -94,8 +94,8 @@ class Motor
     void shiftWrite(int output, int high_low);
 };
 
-ChasisActions *action;
-Motor *motor;
+ChasisActions action;
+Motor motor;
 
 void setup()
 { 
@@ -130,47 +130,47 @@ void ChooseAction(byte cmd)           // выбор действия в зави
       mode = EMP;
       break;  
     case RST:                               
-      action->ActionResetTankMode();
+      action.ActionResetTankMode();
       break;  
     case SLEEP:
-      action->ActionResetTankMode();
+      action.ActionResetTankMode();
       ActionSetControlerToSleep();    
       break;      
     case STP:                              
-      action->ActionStopTank();
+      action.ActionStopTank();
       break;
     case FWD:                         
-      action->ActionMoveTankForward();
+      action.ActionMoveTankForward();
       break;
     case BWD:                             
-      action->ActionMoveTankBackward();
+      action.ActionMoveTankBackward();
       break;
     case LFT:                              
-      action->ActionTurnTankLeft();
+      action.ActionTurnTankLeft();
       break;
     case RGT:                         
-      action->ActionTurnTankRight();
+      action.ActionTurnTankRight();
       break;
     case TBK:                         
-      action->ActionTurnTankBack();
+      action.ActionTurnTankBack();
       break;
     case SPU:                         
-      action->ActionSpeedUpTank();
+      action.ActionSpeedUpTank();
       break;
     case SDN:                         
-      action->ActionSlowDownTank();
+      action.ActionSlowDownTank();
       break;
     case TLT:                         
-      action->ActionTurnOnTheLight();
+      action.ActionTurnOnTheLight();
       break;
     case PLT:                         
-      action->ActionPutOutTheLight();
+      action.ActionPutOutTheLight();
       break;
     case SHB:                         
-      action->ActionShineBrighter();
+      action.ActionShineBrighter();
       break;
     case SHD:                         
-      action->ActionShineDimmer();
+      action.ActionShineDimmer();
       break;    
     default:
       break;      
@@ -184,19 +184,9 @@ void GetSpeedDependence()
     float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
     float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
     
-    Serial.print("amperageLeftMotor-> "); Serial.println(amperageLeftMotor);
-    Serial.print("amperageRightMotor-> "); Serial.println(amperageRightMotor);
+    Serial.print("amperageLeftMotor. "); Serial.println(amperageLeftMotor);
+    Serial.print("amperageRightMotor. "); Serial.println(amperageRightMotor);
     
-    /*if(amperageLeftMotor > MAXIMAL_MOTOR_AMPERAGE &&
-              amperageRightMotor > MAXIMAL_MOTOR_AMPERAGE)
-    {  
-      action->ActionStopTank();                        
-      action->ActionMoveTankBackward();
-      delay(5);  
-      action->ActionTurnTankLeft();
-      delay(5);  
-      action->ActionMoveTankForward();
-    }*/
     if(amperageLeftMotor >= MAXIMAL_MOTOR_AMPERAGE &&
               amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE)
               {

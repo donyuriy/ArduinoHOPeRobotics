@@ -36,7 +36,7 @@
 #define MIN_SOLAR_VERTICAL_ANGLE 110                      // минимальный угол поворота по вертикали
 #define MAX_SOLAR_VERTICAL_ANGLE 160                      // максимальный угол поворота по вертикали
 #define MIN_SOLAR_HORIZONTAL_ANGLE 5                      // минимальный угол поворота Солнечной Панели по горизонтали <- |
-#define MAX_SOLAR_HORIZONTAL_ANGLE 170                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
+#define MAX_SOLAR_HORIZONTAL_ANGLE 170                    // максимальный угол поворота Солнечной Панели по горизонтали | .
 
 #define INTERRUPT_0_PIN 2                           // порт для обработки прерываний D2 (interrupt #0)
 #define INTERRUPT_1_PIN 3                           // порт для обработки прерываний D3 (interrupt #1)
@@ -50,15 +50,16 @@
 #define ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN 11    // УЗ-ЦЕНТРАЛЬНЫЙ сенсор расстояния передатчик
 #define ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN 12       // УЗ-ЦЕНТРАЛЬНЫЙ сенсор расстояния приёмник
 #define OUTPUT_WAKEUP_INTERRUPT_PIN 13              // для отправки цифрового сигнала для прерывания пробуждения вспомогательных шилдов
+
 #define VOLTMETER_SENSOR_PIN A0                     // вольтметр батареи
 #define SOLAR_SENSOR_PIN_2 A2                       // сенсор освещенности 1
 #define SOLAR_SENSOR_PIN_1 A3                       // сенсор освещенности 2
 #define SOLAR_SENSOR_PIN_3 A1                       // сенсор освещенности 3
 
 unsigned long dTforUSsensor = 0;                   // задержка времени для предотврашения застреваня в узких для поворота местах
-unsigned long dTlight = 0;                         // задержка времени -> ВКЛ/ВЫКЛ освещение
-unsigned long dTvoltage = 0;                       // задержка времени -> проверка заряда батареи
-unsigned long dTsolar = 0;                         // задержка времени -> период перекалибровки положения солнечной панели
+unsigned long dTlight = 0;                         // задержка времени . ВКЛ/ВЫКЛ освещение
+unsigned long dTvoltage = 0;                       // задержка времени . проверка заряда батареи
+unsigned long dTsolar = 0;                         // задержка времени . период перекалибровки положения солнечной панели
 byte actionsCounter = 0;                           // количество повторяющихся поворотов за последние N секунд
 byte globalMode = 0;                               // последний установленный режим (см. пометку "глобальный")
 byte extraMode = 0;                                // дополнительный режим
@@ -111,8 +112,8 @@ class BatteryClass
   void RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo);
 };
 
-BatteryClass *bc;
-Command *sendCommand;
+BatteryClass bc;
+Command sendCommand;
 Servo servoUltrasoundSensor;
 Servo servoSunBatteryVertical;
 Servo servoSunBatteryHorizontal;
@@ -139,8 +140,8 @@ void setup()
   attachInterrupt(0, SoundProcessing, CHANGE); 
   delay(100);
   //initial setup
-  sendCommand->ResetCmd();   
-  bc->CheckBatteryVoltage();
+  sendCommand.ResetCmd();   
+  bc.CheckBatteryVoltage();
 }
 
 void loop()
@@ -160,17 +161,17 @@ void loop()
   if (millis() - dTvoltage > 10000)
   {
     dTvoltage = millis();
-    bc->CheckBatteryVoltage();
+    bc.CheckBatteryVoltage();
     
     if(globalMode == SUNON)
     {
       dTsolar = millis();
-      bc->ActionSolarBatteryOn();
+      bc.ActionSolarBatteryOn();
     }
     
-    if (bc->GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
-        bc->GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
-        bc->GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
+    if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
+        bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
+        bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
     {
       EnableSleepingMode();
     }
@@ -200,9 +201,9 @@ void EnableSleepingMode()                               //режим сна че
   }
   if (IsParkedForSleep())
   {
-    if (bc->GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
-        bc->GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
-        bc->GetPhotoSensorData(3) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
+    if (bc.GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
+        bc.GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
+        bc.GetPhotoSensorData(3) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
     {
       return;
     }
@@ -213,7 +214,7 @@ void EnableSleepingMode()                               //режим сна че
 void SleepNow()                                         //режим сна
 {  
   //Serial.println("SleepNow");
-  sendCommand->SetSleepModeCmd();
+  sendCommand.SetSleepModeCmd();
   delay(1000);
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
   sleep_enable();
@@ -245,7 +246,7 @@ bool IsParkedForSleep()                                   // парковка
     
     distanceForward = GetDistanceInCentimetersCentralSensor();
   }
-  sendCommand->StopTankCmd();
+  sendCommand.StopTankCmd();
   return true;
 }
 
@@ -258,19 +259,19 @@ void CheckForObstackles()                                // поиск преп�
 
   if(distanceLeftDown < 10 || distanceRightDown < 10)
   {
-    sendCommand->StopTankCmd();    
-    sendCommand->TurnBackCmd();
+    sendCommand.StopTankCmd();    
+    sendCommand.TurnBackCmd();
     delay(100);
-    sendCommand->StopTankCmd();
+    sendCommand.StopTankCmd();
     TurnRightOrLeft(); 
   }
   if(distanceLeftDown < 25)
   {
-    sendCommand->TurnRightCmd();
+    sendCommand.TurnRightCmd();
   }
   if(distanceRightDown < 25)
   {
-    sendCommand->TurnLeftCmd();
+    sendCommand.TurnLeftCmd();
   }
   
   servoUltrasoundSensor.write(100);
@@ -279,17 +280,17 @@ void CheckForObstackles()                                // поиск преп�
   
   if (distanceForward < 25)
   {
-    sendCommand->StopTankCmd();
-    sendCommand->TurnBackCmd();
+    sendCommand.StopTankCmd();
+    sendCommand.TurnBackCmd();
   }
   if (distanceForward < 35)
   {
-    sendCommand->StopTankCmd();
+    sendCommand.StopTankCmd();
     TurnRightOrLeft();
   }  
   else
   {    
-    sendCommand->MoveForwardCmd();
+    sendCommand.MoveForwardCmd();
   }   
 }
 
@@ -301,8 +302,8 @@ void TurnRightOrLeft()                                // выбор сторон
     dTforUSsensor = millis();
     if (actionsCounter > 5)
     {
-      sendCommand->TurnBackCmd();
-      sendCommand->MoveBackCmd();
+      sendCommand.TurnBackCmd();
+      sendCommand.MoveBackCmd();
     }
     actionsCounter = 0;
   }
@@ -316,16 +317,16 @@ void TurnRightOrLeft()                                // выбор сторон
 
   if(distanceRight < 30 && distanceLeft < 30)
   {
-    sendCommand->TurnBackCmd();
+    sendCommand.TurnBackCmd();
   }  
   else if (distanceRight > distanceLeft)
   {
-    sendCommand->TurnRightCmd();
+    sendCommand.TurnRightCmd();
     actionsCounter ++;
   }
   else 
   {
-    sendCommand->TurnLeftCmd();
+    sendCommand.TurnLeftCmd();
     actionsCounter ++;
   }  
 }
@@ -374,16 +375,16 @@ void TurnOnOffLight()                                                           
   //Serial.println("TurnOnOffLight");
   if(globalMode != SUNON)
   {
-    bc->SetUpSolarBattery(servoSunBatteryVertical, servoSunBatteryHorizontal);
+    bc.SetUpSolarBattery(servoSunBatteryVertical, servoSunBatteryHorizontal);
   }
-  if (bc->GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
-      bc->GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
-      bc->GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT )
+  if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
+      bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
+      bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT )
   {
-    sendCommand->TurnOnTheLightCmd();
+    sendCommand.TurnOnTheLightCmd();
   }
   else 
   {    
-    sendCommand->PutOutTheLightCmd();
+    sendCommand.PutOutTheLightCmd();
   }
 }
