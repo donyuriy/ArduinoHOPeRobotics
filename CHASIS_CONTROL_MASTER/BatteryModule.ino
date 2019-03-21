@@ -34,7 +34,7 @@
     if (GetBattaryVoltage() <= LOWEST_BATTERY_CHARGE)
     {
       sendCommand.StopTankCmd();
-      sendCommand.SetSleepModeCmd();      
+      sendCommand.SetSleepModeCmd(); 
     }
     if (GetBattaryVoltage() <= LOW_BATTERY_CHARGE)
     { 
@@ -126,6 +126,7 @@
     //Serial.println("SetUpSolarBattery");
     byte X = MIN_SOLAR_VERTICAL_ANGLE;
     byte Y = MIN_SOLAR_HORIZONTAL_ANGLE + 10;
+
     if (servoSunBatteryVertical.read() -  X > 3 || servoSunBatteryVertical.read() -  X < -3)
     {
       RunServos(servoSunBatteryVertical.read(), X, servoSunBatteryVertical);
@@ -177,7 +178,9 @@
 
 void BatteryClass :: RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo)                     // замедленный поворот сервоприводов
 {
+
   int delayInterval = 7;
+
   if (ServoStartAngle < ServoFinishAngle)
   {
     for (byte i = ServoStartAngle; i < ServoFinishAngle; i++)

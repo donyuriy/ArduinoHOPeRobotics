@@ -9,6 +9,7 @@ Command :: ~Command(void)
 {  
 }
 
+
 void Command :: SendCommandToChasis(byte cmd)                 //отправка команд на шасси
 {
   Wire.beginTransmission(SLAVE_DEVICE_CHASIS);

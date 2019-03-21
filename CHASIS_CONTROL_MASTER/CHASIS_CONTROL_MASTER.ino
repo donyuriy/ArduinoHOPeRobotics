@@ -24,6 +24,7 @@
 #define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН         глобальный
 #define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
 
+
 #define SLAVE_DEVICE_CHASIS 0x65
 #define SLAVE_DEVICE_CAMERA 0x66
 #define LOWEST_BATTERY_CHARGE 2.51                        // значение соответствует напряжению 2.93 вольта 
@@ -60,6 +61,7 @@ unsigned long dTforUSsensor = 0;                   // задержка врем�
 unsigned long dTlight = 0;                         // задержка времени . ВКЛ/ВЫКЛ освещение
 unsigned long dTvoltage = 0;                       // задержка времени . проверка заряда батареи
 unsigned long dTsolar = 0;                         // задержка времени . период перекалибровки положения солнечной панели
+
 byte actionsCounter = 0;                           // количество повторяющихся поворотов за последние N секунд
 byte globalMode = 0;                               // последний установленный режим (см. пометку "глобальный")
 byte extraMode = 0;                                // дополнительный режим
@@ -112,15 +114,18 @@ class BatteryClass
   void RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo);
 };
 
+
 BatteryClass bc;
 Command sendCommand;
+
 Servo servoUltrasoundSensor;
 Servo servoSunBatteryVertical;
 Servo servoSunBatteryHorizontal;
 
 void setup()
 {
-  Serial.begin(9600);
+
+  //Serial.begin(9600);
   Wire.begin();
   pinMode(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, INPUT);
@@ -129,6 +134,7 @@ void setup()
   pinMode(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_RIGHT_SENSOR_ECHO_PIN, INPUT);    
   pinMode(OUTPUT_WAKEUP_INTERRUPT_PIN, OUTPUT);  
+
   pinMode(SOLAR_SENSOR_PIN_1, INPUT);
   pinMode(SOLAR_SENSOR_PIN_2, INPUT);
   pinMode(SOLAR_SENSOR_PIN_3, INPUT);
@@ -136,7 +142,7 @@ void setup()
   pinMode(INTERRUPT_1_PIN, INPUT);
   servoUltrasoundSensor.attach(SERVO_ULTRASOUND_SENSOR_PIN);
   servoSunBatteryVertical.attach(SERVO_SUN_BATTERY_MOTOR_1);
-  servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);  
+  servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);
   attachInterrupt(0, SoundProcessing, CHANGE); 
   delay(100);
   //initial setup
@@ -146,6 +152,7 @@ void setup()
 
 void loop()
 {     
+
   
   if(globalMode != SUNON)
   {      
@@ -162,6 +169,7 @@ void loop()
   {
     dTvoltage = millis();
     bc.CheckBatteryVoltage();
+
     
     if(globalMode == SUNON)
     {
@@ -172,6 +180,7 @@ void loop()
     if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
         bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
         bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
+
     {
       EnableSleepingMode();
     }
@@ -189,6 +198,7 @@ void WakeUpNow()                                       //обработка пр
 void EnableSleepingMode()                               //режим сна через 60 секунд
 {
   //Serial.println("EnableSleepingMode");
+
   unsigned long timeDelay = millis();  
   while (millis() - timeDelay < 60000)
   { 
@@ -204,10 +214,11 @@ void EnableSleepingMode()                               //режим сна че
     if (bc.GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
         bc.GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP ||
         bc.GetPhotoSensorData(3) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP)
+
     {
       return;
     }
-    SleepNow();
+    //SleepNow();
   }
 }
 
@@ -258,6 +269,7 @@ void CheckForObstackles()                                // поиск преп�
   //Serial.println("distanceRightDown: ");  Serial.println(distanceRightDown);
 
   if(distanceLeftDown < 10 || distanceRightDown < 10)
+
   {
     sendCommand.StopTankCmd();    
     sendCommand.TurnBackCmd();
@@ -292,6 +304,7 @@ void CheckForObstackles()                                // поиск преп�
   {    
     sendCommand.MoveForwardCmd();
   }   
+
 }
 
 void TurnRightOrLeft()                                // выбор стороны поворота
@@ -320,11 +333,13 @@ void TurnRightOrLeft()                                // выбор сторон
     sendCommand.TurnBackCmd();
   }  
   else if (distanceRight > distanceLeft)
+
   {
     sendCommand.TurnRightCmd();
     actionsCounter ++;
   }
   else 
+
   {
     sendCommand.TurnLeftCmd();
     actionsCounter ++;
@@ -380,6 +395,7 @@ void TurnOnOffLight()                                                           
   if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
       bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
       bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT )
+
   {
     sendCommand.TurnOnTheLightCmd();
   }

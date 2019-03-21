@@ -23,6 +23,7 @@
 #define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
 #define DALAY_TIME 150                // время задержки по умолчанию 150мс
 #define MAXIMAL_MOTOR_AMPERAGE 17     // значение соответствует напряжению yV
+
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
 #define RIGHT_MOTOR 2                 // двигатель №2 - правый
 #define LED 3                         // двигатель №3 - светодиод
@@ -99,11 +100,11 @@ Motor motor;
 
 void setup()
 { 
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
-  pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT); 
+  pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT);
   tankSpeed = 160;
 }
 
@@ -129,7 +130,7 @@ void ChooseAction(byte cmd)           // выбор действия в зави
     case EMP:                         
       mode = EMP;
       break;  
-    case RST:                               
+    case RST:
       action.ActionResetTankMode();
       break;  
     case SLEEP:
