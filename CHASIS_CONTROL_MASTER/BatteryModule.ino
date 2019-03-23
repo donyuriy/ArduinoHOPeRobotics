@@ -2,13 +2,11 @@
 //------------------------- MASTER (Работа с питанием -> батарея, солнечная панель) ----------------------------------------
 
   BatteryClass :: BatteryClass(void)
-  {
-    
+  {    
   }
   
   BatteryClass ::  ~BatteryClass(void)
-  {
-    
+  {    
   }
   
   float BatteryClass :: GetBattaryVoltage()                                     //получить усредненное значение напряжения на батарее

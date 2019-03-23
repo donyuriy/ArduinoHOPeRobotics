@@ -9,7 +9,6 @@ ChasisActions :: ~ChasisActions(void)
 {
 }
 
-
 void ChasisActions :: ActionResetTankMode()                        
 {
   mode = EMP;

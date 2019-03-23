@@ -185,8 +185,8 @@ void GetSpeedDependence()
     float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
     float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
     
-    Serial.print("amperageLeftMotor. "); Serial.println(amperageLeftMotor);
-    Serial.print("amperageRightMotor. "); Serial.println(amperageRightMotor);
+   // Serial.print("amperageLeftMotor. "); Serial.println(amperageLeftMotor);
+    //Serial.print("amperageRightMotor. "); Serial.println(amperageRightMotor);
     
     if(amperageLeftMotor >= MAXIMAL_MOTOR_AMPERAGE &&
               amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE)
