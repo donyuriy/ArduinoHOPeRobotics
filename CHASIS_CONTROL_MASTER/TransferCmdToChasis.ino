@@ -89,3 +89,8 @@ void Command :: SetSleepModeCmd()                    // установить р�
 {
   SendCommandToChasis(SLEEP);
 }
+
+void Command :: RunTest()                           //запустить самотестирование
+{
+  SendCommandToChasis(TEST);
+}

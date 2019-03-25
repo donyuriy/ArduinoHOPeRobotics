@@ -6,6 +6,7 @@
 #define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
 #define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
 #define WUP 103                         // 103 - разбудить контроллеры WAKE UP
+#define TEST 104                        // 104 - тест всех датчиков и приводов
 #define RST 109                         // 109 - комманда RESET
 #define STP 110                        // 110 - СТОП
 #define FWD 111                        // 111 - ВПЕРЕД
@@ -115,6 +116,11 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
   ChooseAction(in_data);  
 }
 
+byte SelfTestStart()
+{
+ 
+}
+
 void loop()
 { }
 
@@ -136,7 +142,10 @@ void ChooseAction(byte cmd)           // выбор действия в зави
     case SLEEP:
       action.ActionResetTankMode();
       ActionSetControlerToSleep();    
-      break;      
+      break; 
+    case TEST:
+      SelfTestStart();
+      break;
     case STP:                              
       action.ActionStopTank();
       break;

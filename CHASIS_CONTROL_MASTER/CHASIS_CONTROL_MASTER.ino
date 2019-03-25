@@ -5,9 +5,10 @@
 #include <Wire.h>
 #include <avr/sleep.h>
 
-#define EMP 100                         // 10 - НИЧЕГО, НУЛЬ
-#define SLEEP 102                       // 12 - отправить контроллеры в сон SLEEP
-#define WUP 103                         // 13 - разбудить контроллеры WAKE UP
+#define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
+#define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
+#define WUP 103                         // 103 - разбудить контроллеры WAKE UP
+#define TEST 104                        // 104 - тест всех датчиков и приводов
 #define RST 109                         // 19 - комманда RESET
 #define STP 110                        // 110 - СТОП
 #define FWD 111                        // 111 - ВПЕРЕД
@@ -23,6 +24,18 @@
 #define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
 #define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН         глобальный
 #define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
+
+//Error codes
+#define OK 200
+#define LEFTUSSENSORERROR 401
+#define RIGHTUSSENSORERROR 402
+#define CENTRALUSSENSORERROR 403
+#define SERVOUSSENSORERROR 411
+#define SERVOSOLARHORIZONTALERROR 412
+#define SERVOSOLARVERTICALERROR 413
+#define PHOTOSENSORSOLAR1ERROR 421
+#define PHOTOSENSORSOLAR2ERROR 422
+#define PHOTOSENSORSOLAR3ERROR 423
 
 
 #define SLAVE_DEVICE_CHASIS 0x65
@@ -70,8 +83,10 @@ byte extraMode = 0;                                // дополнительны
 byte verticalSunBattery_angle;                     // положение вертикального двигателя солнечной батареи
 byte horizontalSunBattery_angle;                   // положение горизонтального двигателя солнечной батареи
 byte angleDifference = 2;                          // разница показаний сервоприводов для операций Солнечной батареи
+bool isErrorDetected = false;                      // ошибка в процессе тестирования
 byte photosensorDefference = 2;                    // разница показаний фотосенсоров для операций Солнечной батареи
 volatile bool enginesEnabled = true;
+
 
 class Command
 {
@@ -92,6 +107,7 @@ class Command
   void ShineBrighterCmd();
   void ShineDimmerCmd();
   void SetSleepModeCmd();
+  void RunTest();
 
   private:
   void SendCommandToChasis(byte command);
@@ -128,6 +144,7 @@ void setup()
 {
   Serial.begin(9600);
   Wire.begin();
+  Wire.onRequest(OnRequestHandler);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, INPUT);
   pinMode(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, OUTPUT);
@@ -145,6 +162,7 @@ void setup()
   servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);
   //attachInterrupt(0, OnSoundInterrupt, CHANGE); 
   delay(100);
+  RunSelfTest();
   OnStart();
   interruptorTime = millis();
 }
@@ -155,43 +173,145 @@ void OnStart()
   bc.CheckBatteryVoltage();
 }
 
+void OnRequestHandler(int bytes)
+{
+  
+}
+
 void loop()
 { 
-  if(globalMode != SUNON && enginesEnabled)
-  {      
-    CheckForObstackles();
-  }
-
-  if (millis() - dTlight > 2000 && enginesEnabled)
+  if(!isErrorDetected)
   {
-    dTlight = millis();
-    TurnOnOffLight();     
-  }
-
-  if (millis() - dTvoltage > 10000)
-  {
-    dTvoltage = millis();
-    bc.CheckBatteryVoltage();
-
-    
-    if(globalMode == SUNON)
-    {
-      dTsolar = millis();
-      bc.ActionSolarBatteryOn();
+    if(globalMode != SUNON && enginesEnabled)
+    {      
+      CheckForObstackles();
     }
     
-    if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
-        bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
-        bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
-        millis() - timeToSleep > 300000)
+    if (millis() - dTlight > 2000 && enginesEnabled)
     {
-      SleepNow();
+      dTlight = millis();
+      TurnOnOffLight();     
     }
-    else
+  
+    if (millis() - dTvoltage > 10000)
     {
-      timeToSleep = millis();
-    }
+      dTvoltage = millis();
+      bc.CheckBatteryVoltage();
+  
+      
+      if(globalMode == SUNON)
+      {
+        dTsolar = millis();
+        bc.ActionSolarBatteryOn();
+      }
+      
+      if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
+          bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
+          bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
+          millis() - timeToSleep > 300000)
+      {
+        SleepNow();
+      }
+      else
+      {
+        timeToSleep = millis();
+      }
+    }  
   }  
+}
+
+void RunSelfTest()
+{
+  int errorType = SelfTestStart();
+  if(errorType != OK)
+  {
+    switch(errorType)
+    {
+      case LEFTUSSENSORERROR:
+        break;
+      case RIGHTUSSENSORERROR:
+        break;
+      case CENTRALUSSENSORERROR:
+        break;
+      case SERVOUSSENSORERROR:
+        break;
+      case SERVOSOLARHORIZONTALERROR:
+        break;
+      case SERVOSOLARVERTICALERROR:
+        break;
+      case PHOTOSENSORSOLAR1ERROR:
+        break;
+      case PHOTOSENSORSOLAR2ERROR:
+        break;
+      case PHOTOSENSORSOLAR3ERROR:
+        break;
+      defrault:
+        break;        
+    }
+    isErrorDetected = true;
+  }
+}
+
+int SelfTestStart()
+{
+  byte a = 10;
+  byte b = 170;
+  byte c = 100;
+  byte delayTime = 300;
+  int phMax = 1023;
+  int phMin = 0;
+
+  //US Servo
+  servoUltrasoundSensor.write(a);
+  delay(delayTime);
+  if(servoUltrasoundSensor.read()!= a)
+  {
+    return SERVOUSSENSORERROR;
+  }
+  servoUltrasoundSensor.write(b);
+  delay(delayTime);
+  if(servoUltrasoundSensor.read()!= b)
+  {
+    return SERVOUSSENSORERROR;
+  }
+  servoUltrasoundSensor.write(c);
+  delay(delayTime);
+  float servoAngle = servoUltrasoundSensor.read();
+  
+  // US sensors
+  if(GetDistanceInCentimetersLeftSensor() == 0)
+  {
+    return LEFTUSSENSORERROR;
+  }
+  if(GetDistanceInCentimetersRightSensor == 0)
+  {
+    return RIGHTUSSENSORERROR;
+  }
+  if(GetDistanceInCentimetersCentralSensor == 0)
+  {
+    return CENTRALUSSENSORERROR;
+  }
+
+  //Photo sensors
+  if(!(bc.GetPhotoSensorData(1) == bc.GetPhotoSensorData(2) == bc.GetPhotoSensorData(3) == phMin) &&
+      !(bc.GetPhotoSensorData(1) == bc.GetPhotoSensorData(2) == bc.GetPhotoSensorData(3) == phMax))  
+      {
+        if(bc.GetPhotoSensorData(0) == phMin || bc.GetPhotoSensorData(0) == phMax)
+        {
+          return PHOTOSENSORSOLAR1ERROR;
+        }
+         if(bc.GetPhotoSensorData(1) == phMin || bc.GetPhotoSensorData(1) == phMax)
+        {
+          return PHOTOSENSORSOLAR2ERROR;
+        }
+        if(bc.GetPhotoSensorData(2) == phMin || bc.GetPhotoSensorData(2) == phMax)
+        {
+          return PHOTOSENSORSOLAR3ERROR;
+        }
+      }
+
+  //Solar servos
+  
 }
 
 void OnSoundInterrupt()            //обработка прерывания на порте D2, звуковой сенсор
