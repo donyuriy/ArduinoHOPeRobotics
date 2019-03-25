@@ -50,8 +50,9 @@
 #define MIN_SOLAR_VERTICAL_ANGLE 110                      // минимальный угол поворота по вертикали ^
 #define MAX_SOLAR_VERTICAL_ANGLE 160                      // максимальный угол поворота по вертикали ^
 #define MIN_SOLAR_HORIZONTAL_ANGLE 5                      // минимальный угол поворота Солнечной Панели по горизонтали <- |
-#define MAX_SOLAR_HORIZONTAL_ANGLE 170                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
+#define MAX_SOLAR_HORIZONTAL_ANGLE 175                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
 
+#define ERRORLED 0                                  // показатель ошибки при самотестировании
 #define INTERRUPT_0_PIN 2                           // порт для обработки прерываний D2 (interrupt #0)
 #define INTERRUPT_1_PIN 3                           // порт для обработки прерываний D3 (interrupt #1)
 #define ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN 4        // УЗ-ЛЕВЫЙ сенсор расстояния передатчик
@@ -83,10 +84,9 @@ byte extraMode = 0;                                // дополнительны
 byte verticalSunBattery_angle;                     // положение вертикального двигателя солнечной батареи
 byte horizontalSunBattery_angle;                   // положение горизонтального двигателя солнечной батареи
 byte angleDifference = 2;                          // разница показаний сервоприводов для операций Солнечной батареи
-bool isErrorDetected = false;                      // ошибка в процессе тестирования
+int errorLevel = 0;                                 // ошибка в процессе тестирования
 byte photosensorDefference = 2;                    // разница показаний фотосенсоров для операций Солнечной батареи
 volatile bool enginesEnabled = true;
-
 
 class Command
 {
@@ -142,9 +142,10 @@ Servo servoSunBatteryHorizontal;
 
 void setup()
 {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Wire.begin();
   Wire.onRequest(OnRequestHandler);
+  pinMode(ERRORLED, OUTPUT);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, INPUT);
   pinMode(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, OUTPUT);
@@ -162,6 +163,7 @@ void setup()
   servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);
   //attachInterrupt(0, OnSoundInterrupt, CHANGE); 
   delay(100);
+  errorLevel = OK;
   RunSelfTest();
   OnStart();
   interruptorTime = millis();
@@ -180,7 +182,7 @@ void OnRequestHandler(int bytes)
 
 void loop()
 { 
-  if(!isErrorDetected)
+  if(errorLevel == OK)
   {
     if(globalMode != SUNON && enginesEnabled)
     {      
@@ -217,43 +219,76 @@ void loop()
         timeToSleep = millis();
       }
     }  
-  }  
+  } 
+  else
+  {
+     Blinker(errorLevel);
+  }
 }
 
 void RunSelfTest()
 {
-  int errorType = SelfTestStart();
-  if(errorType != OK)
+  if(errorLevel == 0 || errorLevel == OK)
   {
-    switch(errorType)
+    errorLevel = SelfTestStart();
+  }
+  //Serial.print("Error on test: ");Serial.println(errorLevel);
+  if(errorLevel != OK)
+  {
+    switch(errorLevel)
     {
       case LEFTUSSENSORERROR:
+        Blinker(1);
         break;
       case RIGHTUSSENSORERROR:
+        Blinker(2);
         break;
       case CENTRALUSSENSORERROR:
+        Blinker(3);
         break;
       case SERVOUSSENSORERROR:
+        Blinker(4);
         break;
       case SERVOSOLARHORIZONTALERROR:
+        Blinker(5);
         break;
       case SERVOSOLARVERTICALERROR:
+        Blinker(6);
         break;
       case PHOTOSENSORSOLAR1ERROR:
+        Blinker(7);
         break;
       case PHOTOSENSORSOLAR2ERROR:
+        Blinker(8);
         break;
       case PHOTOSENSORSOLAR3ERROR:
+        Blinker(9);
         break;
       defrault:
         break;        
     }
-    isErrorDetected = true;
   }
+  else
+  {
+    digitalWrite(ERRORLED, LOW);
+  }
+}
+
+void Blinker(byte count)
+{
+  for(byte i = 0; i < count; i++)
+  {
+    digitalWrite(ERRORLED, HIGH);
+    delay(5);
+    digitalWrite(ERRORLED, LOW);
+    delay(300);
+  }
+  delay(1000);
 }
 
 int SelfTestStart()
 {
+  //Serial.println("Self test");
   byte a = 10;
   byte b = 170;
   byte c = 100;
@@ -261,37 +296,22 @@ int SelfTestStart()
   int phMax = 1023;
   int phMin = 0;
 
-  //US Servo
-  servoUltrasoundSensor.write(a);
-  delay(delayTime);
-  if(servoUltrasoundSensor.read()!= a)
-  {
-    return SERVOUSSENSORERROR;
-  }
-  servoUltrasoundSensor.write(b);
-  delay(delayTime);
-  if(servoUltrasoundSensor.read()!= b)
-  {
-    return SERVOUSSENSORERROR;
-  }
-  servoUltrasoundSensor.write(c);
-  delay(delayTime);
-  float servoAngle = servoUltrasoundSensor.read();
-  
   // US sensors
-  if(GetDistanceInCentimetersLeftSensor() == 0)
+  if(GetDistanceInCentimetersLeftSensor() == 3.0)
   {
     return LEFTUSSENSORERROR;
   }
-  if(GetDistanceInCentimetersRightSensor == 0)
+  delay(10);
+  if(GetDistanceInCentimetersRightSensor() == 3.0)
   {
     return RIGHTUSSENSORERROR;
   }
-  if(GetDistanceInCentimetersCentralSensor == 0)
+  delay(10);
+  if(GetDistanceInCentimetersCentralSensor() == 3.0)
   {
     return CENTRALUSSENSORERROR;
   }
-
+  delay(10);
   //Photo sensors
   if(!(bc.GetPhotoSensorData(1) == bc.GetPhotoSensorData(2) == bc.GetPhotoSensorData(3) == phMin) &&
       !(bc.GetPhotoSensorData(1) == bc.GetPhotoSensorData(2) == bc.GetPhotoSensorData(3) == phMax))  
@@ -309,9 +329,26 @@ int SelfTestStart()
           return PHOTOSENSORSOLAR3ERROR;
         }
       }
-
+  delay(10);    
+  //US Servo
+  servoUltrasoundSensor.write(a);
+  delay(delayTime);
+  if(servoUltrasoundSensor.read()!= a)
+  {
+    return SERVOUSSENSORERROR;
+  }
+  servoUltrasoundSensor.write(b);
+  delay(delayTime);
+  if(servoUltrasoundSensor.read()!= b)
+  {
+    return SERVOUSSENSORERROR;
+  }
+  servoUltrasoundSensor.write(c);
+  delay(delayTime);
   //Solar servos
-  
+
+
+  return OK;
 }
 
 void OnSoundInterrupt()            //обработка прерывания на порте D2, звуковой сенсор
@@ -372,8 +409,8 @@ void CheckForObstackles()                                // поиск преп�
   float distanceRightDown = GetDistanceInCentimetersRightSensor();
 
   if(distanceLeftDown < 10 || distanceRightDown < 10)
-
   {
+    //Serial.println("! obstacle");
     sendCommand.StopTankCmd();    
     sendCommand.TurnBackCmd();
     delay(100);
@@ -395,6 +432,7 @@ void CheckForObstackles()                                // поиск преп�
   
   if (distanceForward < 25)
   {
+    //Serial.println("distanceForward"); Serial.println(distanceForward);
     sendCommand.StopTankCmd();
     sendCommand.TurnBackCmd();
   }
@@ -417,6 +455,7 @@ void TurnRightOrLeft()                                // выбор сторон
     dTforUSsensor = millis();
     if (actionsCounter > 6)
     {
+      //Serial.println("actionsCounter > 6");
       sendCommand.TurnBackCmd();
       sendCommand.MoveBackCmd();
     }
@@ -425,13 +464,14 @@ void TurnRightOrLeft()                                // выбор сторон
   servoUltrasoundSensor.write(20);
   delay(300);
   float distanceRight = GetDistanceInCentimetersCentralSensor();
-  servoUltrasoundSensor.write(180);
+  servoUltrasoundSensor.write(170);
   delay(300);
   float distanceLeft = GetDistanceInCentimetersCentralSensor();
   servoUltrasoundSensor.write(100);
 
   if(distanceRight < 30 && distanceLeft < 30)
   {
+    //Serial.println("distanceRight < 30 && distanceLeft < 30");
     sendCommand.TurnBackCmd();
   }  
   else if (distanceRight > distanceLeft)
@@ -453,7 +493,8 @@ float GetDistanceInCentimetersCentralSensor()                       //получ
   digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, LOW);
-  float distance = (pulseIn(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, HIGH)) / 58.2;     
+  float distance = (pulseIn(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, HIGH)) / 58.2;    
+  //Serial.print("distance = "); Serial.println(distance);
   if (distance > 200)distance = 200;
   if (distance < 3)distance = 3;
   return distance;  
@@ -467,6 +508,7 @@ float GetDistanceInCentimetersLeftSensor()
   delayMicroseconds(10);
   digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, LOW);
   float distance = (pulseIn(ULTRASOUND_LEFT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
+   //Serial.print("dL = "); Serial.println(distance);
   if (distance > 200)distance = 200;
   if (distance < 3)distance = 3;
   return distance; 
@@ -480,6 +522,7 @@ float GetDistanceInCentimetersRightSensor()
   delayMicroseconds(10);
   digitalWrite(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, LOW);
   float distance = (pulseIn(ULTRASOUND_RIGHT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
+  //Serial.print("dR = "); Serial.println(distance);
   if (distance > 200)distance = 200;
   if (distance < 3)distance = 3;
   return distance;

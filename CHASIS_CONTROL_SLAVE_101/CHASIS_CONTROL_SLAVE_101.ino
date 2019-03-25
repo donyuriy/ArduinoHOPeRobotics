@@ -101,7 +101,7 @@ Motor motor;
 
 void setup()
 { 
-  //Serial.begin(9600);
+  Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
@@ -129,7 +129,7 @@ void WakeUpNow()                      //обработка прерывания 
 
 void ChooseAction(byte cmd)           // выбор действия в зависимости от полученой команды
 {
-  //Serial.println(cmd);
+  Serial.println(cmd);
   dTtemp = millis();
   switch (cmd)
   {
