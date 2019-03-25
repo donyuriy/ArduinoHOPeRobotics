@@ -125,12 +125,12 @@ class BatteryClass
   void SetUpSolarBattery(Servo servoSunBatteryVertical, Servo servoSunBatteryHorizontal);
   void ActionSolarBatteryOff();
   float GetPhotoSensorData(byte sensorID);
+  void RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo);
   
   private:  
   void SearchVerticalSolar();
   void SearchHorizontalSolar();  
-  void SolarSearchingInMotion();
-  void RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo);
+  void SolarSearchingInMotion();  
 };
 
 BatteryClass bc;
@@ -144,7 +144,6 @@ void setup()
 {
   //Serial.begin(9600);
   Wire.begin();
-  Wire.onRequest(OnRequestHandler);
   pinMode(ERRORLED, OUTPUT);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, INPUT);
@@ -175,11 +174,6 @@ void OnStart()
   bc.CheckBatteryVoltage();
 }
 
-void OnRequestHandler(int bytes)
-{
-  
-}
-
 void loop()
 { 
   if(errorLevel == OK)
@@ -203,6 +197,7 @@ void loop()
       
       if(globalMode == SUNON)
       {
+        Flasher(1);
         dTsolar = millis();
         bc.ActionSolarBatteryOn();
       }
@@ -222,7 +217,7 @@ void loop()
   } 
   else
   {
-     Blinker(errorLevel);
+     Flasher(errorLevel);
   }
 }
 
@@ -238,33 +233,33 @@ void RunSelfTest()
     switch(errorLevel)
     {
       case LEFTUSSENSORERROR:
-        Blinker(1);
+        Flasher(3);
         break;
       case RIGHTUSSENSORERROR:
-        Blinker(2);
+        Flasher(3);
         break;
       case CENTRALUSSENSORERROR:
-        Blinker(3);
+        Flasher(3);
         break;
       case SERVOUSSENSORERROR:
-        Blinker(4);
+        Flasher(4);
         break;
       case SERVOSOLARHORIZONTALERROR:
-        Blinker(5);
+        Flasher(5);
         break;
       case SERVOSOLARVERTICALERROR:
-        Blinker(6);
+        Flasher(5);
         break;
       case PHOTOSENSORSOLAR1ERROR:
-        Blinker(7);
+        Flasher(7);
         break;
       case PHOTOSENSORSOLAR2ERROR:
-        Blinker(8);
+        Flasher(7);
         break;
       case PHOTOSENSORSOLAR3ERROR:
-        Blinker(9);
+        Flasher(7);
         break;
-      defrault:
+      default:
         break;        
     }
   }
@@ -274,16 +269,16 @@ void RunSelfTest()
   }
 }
 
-void Blinker(byte count)
+void Flasher(byte count)
 {
   for(byte i = 0; i < count; i++)
   {
     digitalWrite(ERRORLED, HIGH);
-    delay(5);
+    delay(1);
     digitalWrite(ERRORLED, LOW);
     delay(300);
   }
-  delay(1000);
+  delay(10000);
 }
 
 int SelfTestStart()
@@ -292,7 +287,7 @@ int SelfTestStart()
   byte a = 10;
   byte b = 170;
   byte c = 100;
-  byte delayTime = 300;
+  int delayTime = 500;
   int phMax = 1023;
   int phMin = 0;
 
@@ -312,19 +307,19 @@ int SelfTestStart()
     return CENTRALUSSENSORERROR;
   }
   delay(10);
-  //Photo sensors
-  if(!(bc.GetPhotoSensorData(1) == bc.GetPhotoSensorData(2) == bc.GetPhotoSensorData(3) == phMin) &&
-      !(bc.GetPhotoSensorData(1) == bc.GetPhotoSensorData(2) == bc.GetPhotoSensorData(3) == phMax))  
+  //Photo sensors  
+  if(!(bc.GetPhotoSensorData(1) == phMin && bc.GetPhotoSensorData(2) == phMin && bc.GetPhotoSensorData(3) == phMin) &&
+        !(bc.GetPhotoSensorData(1) == phMax && bc.GetPhotoSensorData(2) == phMax && bc.GetPhotoSensorData(3) == phMax ))
       {
-        if(bc.GetPhotoSensorData(0) == phMin || bc.GetPhotoSensorData(0) == phMax)
+        if(bc.GetPhotoSensorData(1) == phMin || bc.GetPhotoSensorData(1) == phMax)
         {
           return PHOTOSENSORSOLAR1ERROR;
         }
-         if(bc.GetPhotoSensorData(1) == phMin || bc.GetPhotoSensorData(1) == phMax)
+         if(bc.GetPhotoSensorData(2) == phMin || bc.GetPhotoSensorData(2) == phMax)
         {
           return PHOTOSENSORSOLAR2ERROR;
         }
-        if(bc.GetPhotoSensorData(2) == phMin || bc.GetPhotoSensorData(2) == phMax)
+        if(bc.GetPhotoSensorData(3) == phMin || bc.GetPhotoSensorData(3) == phMax)
         {
           return PHOTOSENSORSOLAR3ERROR;
         }
@@ -345,9 +340,38 @@ int SelfTestStart()
   }
   servoUltrasoundSensor.write(c);
   delay(delayTime);
+  
   //Solar servos
-
-
+  bc.RunServos(servoSunBatteryHorizontal.read(), MIN_SOLAR_HORIZONTAL_ANGLE, servoSunBatteryHorizontal);
+  delay(delayTime);
+  if(servoSunBatteryHorizontal.read() - MIN_SOLAR_HORIZONTAL_ANGLE > 3)
+  {
+    return SERVOSOLARHORIZONTALERROR;
+  }
+  delay(10);
+  
+  bc.RunServos(servoSunBatteryHorizontal.read(), MAX_SOLAR_HORIZONTAL_ANGLE, servoSunBatteryHorizontal);
+  delay(delayTime);
+  if(MAX_SOLAR_HORIZONTAL_ANGLE - servoSunBatteryHorizontal.read() > 3)
+  {
+    return SERVOSOLARHORIZONTALERROR;
+  }
+  delay(10);
+  
+  bc.RunServos(servoSunBatteryVertical.read(), MIN_SOLAR_VERTICAL_ANGLE, servoSunBatteryVertical);
+  delay(delayTime);
+  if(servoSunBatteryVertical.read() - MIN_SOLAR_VERTICAL_ANGLE > 3)
+  {
+    return SERVOSOLARVERTICALERROR;
+  }
+  delay(10);
+  
+  bc.RunServos(servoSunBatteryVertical.read(), MAX_SOLAR_VERTICAL_ANGLE, servoSunBatteryVertical);
+  delay(delayTime);
+  if(MAX_SOLAR_VERTICAL_ANGLE - servoSunBatteryVertical.read() > 3)
+  {
+    return SERVOSOLARVERTICALERROR;
+  }
   return OK;
 }
 
