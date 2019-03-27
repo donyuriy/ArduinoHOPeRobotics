@@ -37,7 +37,6 @@
 #define PHOTOSENSORSOLAR2ERROR 422
 #define PHOTOSENSORSOLAR3ERROR 423
 
-
 #define SLAVE_DEVICE_CHASIS 0x65
 #define SLAVE_DEVICE_CAMERA 0x66
 #define LOWEST_BATTERY_CHARGE 2.51                        // значение соответствует напряжению 2.93 вольта 
@@ -133,8 +132,24 @@ class BatteryClass
   void SolarSearchingInMotion();  
 };
 
+class TestClass
+{
+  public:
+  TestClass();
+  ~TestClass();
+  void Flasher(byte count);
+  void RunSelfTest();
+
+  private:
+  int UsSensorsTestRun();
+  int PhotoSensorsTestRun();
+  int UsServosTestRun();
+  int SolarServosTestRun();
+};
+
 BatteryClass bc;
 Command sendCommand;
+TestClass tests;
 
 Servo servoUltrasoundSensor;
 Servo servoSunBatteryVertical;
@@ -163,7 +178,7 @@ void setup()
   //attachInterrupt(0, OnSoundInterrupt, CHANGE); 
   delay(100);
   errorLevel = OK;
-  RunSelfTest();
+  tests.RunSelfTest();
   OnStart();
   interruptorTime = millis();
 }
@@ -197,7 +212,7 @@ void loop()
       
       if(globalMode == SUNON)
       {
-        Flasher(1);
+        tests.Flasher(1);
         dTsolar = millis();
         bc.ActionSolarBatteryOn();
       }
@@ -217,162 +232,8 @@ void loop()
   } 
   else
   {
-     Flasher(errorLevel);
+     tests.Flasher(errorLevel);
   }
-}
-
-void RunSelfTest()
-{
-  if(errorLevel == 0 || errorLevel == OK)
-  {
-    errorLevel = SelfTestStart();
-  }
-  //Serial.print("Error on test: ");Serial.println(errorLevel);
-  if(errorLevel != OK)
-  {
-    switch(errorLevel)
-    {
-      case LEFTUSSENSORERROR:
-        Flasher(3);
-        break;
-      case RIGHTUSSENSORERROR:
-        Flasher(3);
-        break;
-      case CENTRALUSSENSORERROR:
-        Flasher(3);
-        break;
-      case SERVOUSSENSORERROR:
-        Flasher(4);
-        break;
-      case SERVOSOLARHORIZONTALERROR:
-        Flasher(5);
-        break;
-      case SERVOSOLARVERTICALERROR:
-        Flasher(5);
-        break;
-      case PHOTOSENSORSOLAR1ERROR:
-        Flasher(7);
-        break;
-      case PHOTOSENSORSOLAR2ERROR:
-        Flasher(7);
-        break;
-      case PHOTOSENSORSOLAR3ERROR:
-        Flasher(7);
-        break;
-      default:
-        break;        
-    }
-  }
-  else
-  {
-    digitalWrite(ERRORLED, LOW);
-  }
-}
-
-void Flasher(byte count)
-{
-  for(byte i = 0; i < count; i++)
-  {
-    digitalWrite(ERRORLED, HIGH);
-    delay(1);
-    digitalWrite(ERRORLED, LOW);
-    delay(300);
-  }
-  delay(10000);
-}
-
-int SelfTestStart()
-{
-  //Serial.println("Self test");
-  byte a = 10;
-  byte b = 170;
-  byte c = 100;
-  int delayTime = 500;
-  int phMax = 1023;
-  int phMin = 0;
-
-  // US sensors
-  if(GetDistanceInCentimetersLeftSensor() == 3.0)
-  {
-    return LEFTUSSENSORERROR;
-  }
-  delay(10);
-  if(GetDistanceInCentimetersRightSensor() == 3.0)
-  {
-    return RIGHTUSSENSORERROR;
-  }
-  delay(10);
-  if(GetDistanceInCentimetersCentralSensor() == 3.0)
-  {
-    return CENTRALUSSENSORERROR;
-  }
-  delay(10);
-  //Photo sensors  
-  if(!(bc.GetPhotoSensorData(1) == phMin && bc.GetPhotoSensorData(2) == phMin && bc.GetPhotoSensorData(3) == phMin) &&
-        !(bc.GetPhotoSensorData(1) == phMax && bc.GetPhotoSensorData(2) == phMax && bc.GetPhotoSensorData(3) == phMax ))
-      {
-        if(bc.GetPhotoSensorData(1) == phMin || bc.GetPhotoSensorData(1) == phMax)
-        {
-          return PHOTOSENSORSOLAR1ERROR;
-        }
-         if(bc.GetPhotoSensorData(2) == phMin || bc.GetPhotoSensorData(2) == phMax)
-        {
-          return PHOTOSENSORSOLAR2ERROR;
-        }
-        if(bc.GetPhotoSensorData(3) == phMin || bc.GetPhotoSensorData(3) == phMax)
-        {
-          return PHOTOSENSORSOLAR3ERROR;
-        }
-      }
-  delay(10);    
-  //US Servo
-  servoUltrasoundSensor.write(a);
-  delay(delayTime);
-  if(servoUltrasoundSensor.read()!= a)
-  {
-    return SERVOUSSENSORERROR;
-  }
-  servoUltrasoundSensor.write(b);
-  delay(delayTime);
-  if(servoUltrasoundSensor.read()!= b)
-  {
-    return SERVOUSSENSORERROR;
-  }
-  servoUltrasoundSensor.write(c);
-  delay(delayTime);
-  
-  //Solar servos
-  bc.RunServos(servoSunBatteryHorizontal.read(), MIN_SOLAR_HORIZONTAL_ANGLE, servoSunBatteryHorizontal);
-  delay(delayTime);
-  if(servoSunBatteryHorizontal.read() - MIN_SOLAR_HORIZONTAL_ANGLE > 3)
-  {
-    return SERVOSOLARHORIZONTALERROR;
-  }
-  delay(10);
-  
-  bc.RunServos(servoSunBatteryHorizontal.read(), MAX_SOLAR_HORIZONTAL_ANGLE, servoSunBatteryHorizontal);
-  delay(delayTime);
-  if(MAX_SOLAR_HORIZONTAL_ANGLE - servoSunBatteryHorizontal.read() > 3)
-  {
-    return SERVOSOLARHORIZONTALERROR;
-  }
-  delay(10);
-  
-  bc.RunServos(servoSunBatteryVertical.read(), MIN_SOLAR_VERTICAL_ANGLE, servoSunBatteryVertical);
-  delay(delayTime);
-  if(servoSunBatteryVertical.read() - MIN_SOLAR_VERTICAL_ANGLE > 3)
-  {
-    return SERVOSOLARVERTICALERROR;
-  }
-  delay(10);
-  
-  bc.RunServos(servoSunBatteryVertical.read(), MAX_SOLAR_VERTICAL_ANGLE, servoSunBatteryVertical);
-  delay(delayTime);
-  if(MAX_SOLAR_VERTICAL_ANGLE - servoSunBatteryVertical.read() > 3)
-  {
-    return SERVOSOLARVERTICALERROR;
-  }
-  return OK;
 }
 
 void OnSoundInterrupt()            //обработка прерывания на порте D2, звуковой сенсор
