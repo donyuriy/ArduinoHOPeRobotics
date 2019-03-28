@@ -31,12 +31,12 @@
     //Serial.println("CheckBatteryVoltage");
     if (GetBattaryVoltage() <= LOWEST_BATTERY_CHARGE)
     {
-      sendCommand.StopTankCmd();
-      sendCommand.SetSleepModeCmd(); 
+      cmd.StopTankCmd();
+      cmd.SetSleepModeCmd(); 
     }
     if (GetBattaryVoltage() <= LOW_BATTERY_CHARGE)
     { 
-      sendCommand.StopTankCmd();
+      cmd.StopTankCmd();
       if (globalMode != SUNON) globalMode = SUNON;
       if (GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY &&
           GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY &&

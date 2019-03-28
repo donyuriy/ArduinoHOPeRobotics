@@ -9,10 +9,10 @@ Command :: ~Command(void)
 {  
 }
 
-void Command :: SendCommandToChasis(byte cmd)                 //отправка команд на шасси
+void Command :: SendCommandToChasis(byte command)                 //отправка команд на шасси
 {
   Wire.beginTransmission(SLAVE_DEVICE_CHASIS);
-  Wire.write(cmd);
+  Wire.write(command);
   Wire.endTransmission(true);  
   Wire.requestFrom(SLAVE_DEVICE_CHASIS, 2);
 }

@@ -10,7 +10,7 @@ TestClass :: ~TestClass(void)
 }
 
 void TestClass :: Flasher(byte count)
-{
+{  
   for(byte i = 0; i < count; i++)
   {
     digitalWrite(ERRORLED, HIGH);
@@ -22,23 +22,45 @@ void TestClass :: Flasher(byte count)
 }
 
 void TestClass :: RunSelfTest()
+{    
+  delay(500);
+  this->HandleErrorLevel(UsSensorsTestRun());
+  this->HandleErrorLevel(PhotoSensorsTestRun());
+  this->HandleErrorLevel(UsServosTestRun());
+  this->HandleErrorLevel(SolarServosTestRun());
+      
+}
+
+void TestClass :: HandleErrorLevel(int error)
 {
-  if(errorLevel == 0 || errorLevel == OK)
-  {
-    errorLevel = UsSensorsTestRun();
-    errorLevel = PhotoSensorsTestRun();
-    errorLevel = UsServosTestRun();
-    errorLevel = SolarServosTestRun();
-  }
-  
-  if(errorLevel != OK)
-  {
-   Flasher(3);              
-  }  
-  else
-  {
-    digitalWrite(ERRORLED, LOW);
-  }
+    if(error != OK)
+    {
+      switch(error)
+      {
+        case LEFTUSSENSORERROR:
+        case RIGHTUSSENSORERROR:
+        case CENTRALUSSENSORERROR:
+          this->Flasher(3);
+          break;
+        case PHOTOSENSORSOLAR1ERROR:
+        case PHOTOSENSORSOLAR2ERROR:
+        case PHOTOSENSORSOLAR3ERROR:
+          this->Flasher(6);
+          break;
+        case SERVOUSSENSORERROR:
+        case SERVOSOLARHORIZONTALERROR:
+        case SERVOSOLARVERTICALERROR:
+          this->Flasher(9); 
+          break;
+        default: break;       
+      }
+      errorLevel = error; 
+    }
+    else
+    {
+      digitalWrite(ERRORLED, LOW);
+      errorLevel = OK;
+    }  
 }
 
 int TestClass :: UsSensorsTestRun()
@@ -47,17 +69,15 @@ int TestClass :: UsSensorsTestRun()
   {
     return LEFTUSSENSORERROR;
   }
-  delay(10);
   if(GetDistanceInCentimetersRightSensor() == 3.0)
   {
     return RIGHTUSSENSORERROR;
   }
-  delay(10);
   if(GetDistanceInCentimetersCentralSensor() == 3.0)
   {
     return CENTRALUSSENSORERROR;
   }
-  delay(10);
+  
   return OK;
 }
 
@@ -107,6 +127,8 @@ int TestClass :: UsServosTestRun()
   }
   servoUltrasoundSensor.write(c);
   delay(delayTime);
+
+  return OK;
 }
 
 int TestClass :: SolarServosTestRun()
@@ -118,7 +140,6 @@ int TestClass :: SolarServosTestRun()
   {
     return SERVOSOLARHORIZONTALERROR;
   }
-  delay(10);
   
   bc.RunServos(servoSunBatteryHorizontal.read(), MAX_SOLAR_HORIZONTAL_ANGLE, servoSunBatteryHorizontal);
   delay(delayTime);
@@ -126,7 +147,6 @@ int TestClass :: SolarServosTestRun()
   {
     return SERVOSOLARHORIZONTALERROR;
   }
-  delay(10);
   
   bc.RunServos(servoSunBatteryVertical.read(), MIN_SOLAR_VERTICAL_ANGLE, servoSunBatteryVertical);
   delay(delayTime);
@@ -134,7 +154,6 @@ int TestClass :: SolarServosTestRun()
   {
     return SERVOSOLARVERTICALERROR;
   }
-  delay(10);
   
   bc.RunServos(servoSunBatteryVertical.read(), MAX_SOLAR_VERTICAL_ANGLE, servoSunBatteryVertical);
   delay(delayTime);

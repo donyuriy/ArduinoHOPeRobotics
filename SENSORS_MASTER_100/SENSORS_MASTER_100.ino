@@ -46,8 +46,8 @@
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_AWAKE 400            // значение освещенности для ПРОСНУТЬСЯ
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT 600     // значение освещенности для ВКЛЮЧЕНИЯ ОСВЕЩЕНИЯ
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP 800            // значение освещенности для перехода в РЕЖИМ СНА
-#define MIN_SOLAR_VERTICAL_ANGLE 110                      // минимальный угол поворота по вертикали ^
-#define MAX_SOLAR_VERTICAL_ANGLE 160                      // максимальный угол поворота по вертикали ^
+#define MIN_SOLAR_VERTICAL_ANGLE 60                      // минимальный угол поворота по вертикали ^
+#define MAX_SOLAR_VERTICAL_ANGLE 120                      // максимальный угол поворота по вертикали ^
 #define MIN_SOLAR_HORIZONTAL_ANGLE 5                      // минимальный угол поворота Солнечной Панели по горизонтали <- |
 #define MAX_SOLAR_HORIZONTAL_ANGLE 175                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
 
@@ -85,6 +85,7 @@ byte horizontalSunBattery_angle;                   // положение гор�
 byte angleDifference = 2;                          // разница показаний сервоприводов для операций Солнечной батареи
 int errorLevel = 0;                                 // ошибка в процессе тестирования
 byte photosensorDefference = 2;                    // разница показаний фотосенсоров для операций Солнечной батареи
+byte testAttemptsLeft = 5;
 volatile bool enginesEnabled = true;
 
 class Command
@@ -145,10 +146,11 @@ class TestClass
   int PhotoSensorsTestRun();
   int UsServosTestRun();
   int SolarServosTestRun();
+  void HandleErrorLevel(int error);
 };
 
 BatteryClass bc;
-Command sendCommand;
+Command cmd;
 TestClass tests;
 
 Servo servoUltrasoundSensor;
@@ -185,12 +187,12 @@ void setup()
 
 void OnStart()
 {
-  sendCommand.ResetCmd();   
+  cmd.ResetCmd();   
   bc.CheckBatteryVoltage();
 }
 
 void loop()
-{ 
+{  
   if(errorLevel == OK)
   {
     if(globalMode != SUNON && enginesEnabled)
@@ -230,9 +232,14 @@ void loop()
       }
     }  
   } 
+  else if(testAttemptsLeft > 0)
+  {
+     testAttemptsLeft --;
+     tests.RunSelfTest();
+  }
   else
   {
-     tests.Flasher(errorLevel);
+    tests.Flasher(3);
   }
 }
 
@@ -254,7 +261,7 @@ void WakeUpNow()                   //обработка прерывания н�
 
 void SleepNow()                 //режим сна
 { 
-  sendCommand.SetSleepModeCmd();
+  cmd.SetSleepModeCmd();
   delay(1000);
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
   sleep_enable();
@@ -284,7 +291,7 @@ bool IsParkedForSleep()                                   // парковка
   {    
     distanceForward = GetDistanceInCentimetersCentralSensor();
   }
-  sendCommand.StopTankCmd();
+  cmd.StopTankCmd();
   return true;
 }
 
@@ -296,19 +303,19 @@ void CheckForObstackles()                                // поиск преп�
   if(distanceLeftDown < 10 || distanceRightDown < 10)
   {
     //Serial.println("! obstacle");
-    sendCommand.StopTankCmd();    
-    sendCommand.TurnBackCmd();
+    cmd.StopTankCmd();    
+    cmd.TurnBackCmd();
     delay(100);
-    sendCommand.StopTankCmd();
+    cmd.StopTankCmd();
     TurnRightOrLeft(); 
   }
   if(distanceLeftDown < 25)
   {
-    sendCommand.TurnRightCmd();
+    cmd.TurnRightCmd();
   }
   if(distanceRightDown < 25)
   {
-    sendCommand.TurnLeftCmd();
+    cmd.TurnLeftCmd();
   }
   
   servoUltrasoundSensor.write(100);
@@ -318,17 +325,17 @@ void CheckForObstackles()                                // поиск преп�
   if (distanceForward < 25)
   {
     //Serial.println("distanceForward"); Serial.println(distanceForward);
-    sendCommand.StopTankCmd();
-    sendCommand.TurnBackCmd();
+    cmd.StopTankCmd();
+    cmd.TurnBackCmd();
   }
   if (distanceForward < 35)
   {
-    sendCommand.StopTankCmd();
+    cmd.StopTankCmd();
     TurnRightOrLeft();
   }  
   else
   {    
-    sendCommand.MoveForwardCmd();
+    cmd.MoveForwardCmd();
   }   
 
 }
@@ -341,8 +348,8 @@ void TurnRightOrLeft()                                // выбор сторон
     if (actionsCounter > 6)
     {
       //Serial.println("actionsCounter > 6");
-      sendCommand.TurnBackCmd();
-      sendCommand.MoveBackCmd();
+      cmd.TurnBackCmd();
+      cmd.MoveBackCmd();
     }
     actionsCounter = 0;
   }
@@ -357,16 +364,16 @@ void TurnRightOrLeft()                                // выбор сторон
   if(distanceRight < 30 && distanceLeft < 30)
   {
     //Serial.println("distanceRight < 30 && distanceLeft < 30");
-    sendCommand.TurnBackCmd();
+    cmd.TurnBackCmd();
   }  
   else if (distanceRight > distanceLeft)
   {
-    sendCommand.TurnRightCmd();
+    cmd.TurnRightCmd();
     actionsCounter ++;
   }
   else 
   {
-    sendCommand.TurnLeftCmd();
+    cmd.TurnLeftCmd();
     actionsCounter ++;
   }  
 }
@@ -424,10 +431,10 @@ void TurnOnOffLight()                                                           
       bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT )
 
   {
-    sendCommand.TurnOnTheLightCmd();
+    cmd.TurnOnTheLightCmd();
   }
   else 
   {    
-    sendCommand.PutOutTheLightCmd();
+    cmd.PutOutTheLightCmd();
   }
 }
