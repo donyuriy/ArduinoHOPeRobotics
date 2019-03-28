@@ -1,10 +1,18 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------- MASTER (Отправка комманд на другие контроллеры) ----------------------------------------
 
-void Command :: SendCommandToChasis(byte cmd)                 //отправка команд на шасси
+Command :: Command(void)
+{  
+}
+
+Command :: ~Command(void)
+{  
+}
+
+void Command :: SendCommandToChasis(byte command)                 //отправка команд на шасси
 {
   Wire.beginTransmission(SLAVE_DEVICE_CHASIS);
-  Wire.write(cmd);
+  Wire.write(command);
   Wire.endTransmission(true);  
   Wire.requestFrom(SLAVE_DEVICE_CHASIS, 2);
 }
@@ -80,4 +88,9 @@ void Command :: ShineDimmerCmd()                     //уменьшить осв
 void Command :: SetSleepModeCmd()                    // установить режим сна для шасси
 {
   SendCommandToChasis(SLEEP);
+}
+
+void Command :: RunTest()                           //запустить самотестирование
+{
+  SendCommandToChasis(TEST);
 }
