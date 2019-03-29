@@ -1,4 +1,4 @@
-// I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
+// I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
 //------------------------- MASTER ----------------------------------------
 //Libraries
 #include <Servo.h>
@@ -49,7 +49,7 @@
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_AWAKE 400            // значение освещенности для ПРОСНУТЬСЯ
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT 600     // значение освещенности для ВКЛЮЧЕНИЯ ОСВЕЩЕНИЯ
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP 800            // значение освещенности для перехода в РЕЖИМ СНА
-#define MIN_SOLAR_VERTICAL_ANGLE 60                      // минимальный угол поворота по вертикали ^
+#define MIN_SOLAR_VERTICAL_ANGLE 70                     // минимальный угол поворота по вертикали ^
 #define MAX_SOLAR_VERTICAL_ANGLE 120                      // максимальный угол поворота по вертикали ^
 #define MIN_SOLAR_HORIZONTAL_ANGLE 5                      // минимальный угол поворота Солнечной Панели по горизонтали <- |
 #define MAX_SOLAR_HORIZONTAL_ANGLE 175                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
@@ -234,7 +234,8 @@ void loop()
       {
         timeToSleep = millis();
       }
-    }  
+    }
+    digitalWrite(ERRORLED, LOW);  
   } 
   else if(testAttemptsLeft > 0)
   {
