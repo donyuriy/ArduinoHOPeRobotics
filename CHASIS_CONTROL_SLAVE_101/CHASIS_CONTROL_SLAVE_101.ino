@@ -27,6 +27,7 @@
 #define OK 200
 
 //System variables
+#define addr 0x0D                     //I2C Address for The HMC5883 magnetometer
 #define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
 #define DALAY_TIME 150                // время задержки по умолчанию 150мс
 #define MAXIMAL_MOTOR_AMPERAGE 17     // значение соответствует напряжению yV
@@ -104,8 +105,20 @@ class Motor
     void shiftWrite(int output, int high_low);
 };
 
+class Megnetometer
+{
+  public:
+  Megnetometer();
+  ~Megnetometer();
+  void GetRotationAngle(float *angleX, float *angleY, float *angleZ);
+  
+  private:
+  void GetMagnetometrData(float *x, float *y, float *z);
+};
+
 ChasisActions action;
 Motor motor;
+Megnetometer mag;
 
 void setup()
 { 
