@@ -151,7 +151,7 @@ class TestClass
   int PhotoSensorsTestRun();
   int UsServosTestRun();
   int SolarServosTestRun();
-  void HandleErrorLevel(int error);
+  void HandleError(int error);
 };
 
 BatteryClass bc;
@@ -262,7 +262,7 @@ void OnSoundInterrupt()            //обработка прерывания н�
 
 void OnReceiveEventHandler(int howMany)
 {
-  if(Wire.available()>0)
+  if(Wire.available() > 0)
   {
     byte in_data = Wire.read();
     interrupts();

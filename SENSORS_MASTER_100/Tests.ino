@@ -22,16 +22,30 @@ void TestClass :: Flasher(byte count)
 }
 
 void TestClass :: RunSelfTest()
-{    
-  delay(500);
-  this->HandleErrorLevel(UsSensorsTestRun());
-  this->HandleErrorLevel(PhotoSensorsTestRun());
-  this->HandleErrorLevel(UsServosTestRun());
-  this->HandleErrorLevel(SolarServosTestRun());
-      
+{   
+  int t1 = UsSensorsTestRun();
+  int t2 = PhotoSensorsTestRun();
+  int t3 = UsServosTestRun();
+  int t4 = SolarServosTestRun();
+        if(t1 != OK)
+        {
+          HandleError(t1);
+        }
+        if(t2 != OK)
+        {
+          HandleError(t2);
+        }
+        if(t3 != OK)
+        {
+           HandleError(t3);
+        }
+        if(t4 != OK)
+        {
+          HandleError(t4);  
+        }
 }
 
-void TestClass :: HandleErrorLevel(int error)
+void TestClass :: HandleError(int error)
 {
     if(error != OK)
     {
@@ -39,18 +53,18 @@ void TestClass :: HandleErrorLevel(int error)
       {
         case LEFTUSSENSORERROR:
         case RIGHTUSSENSORERROR:
-        case CENTRALUSSENSORERROR:
-          this->Flasher(3);
+        case CENTRALUSSENSORERROR:        
+          Flasher(3);
           break;
         case PHOTOSENSORSOLAR1ERROR:
         case PHOTOSENSORSOLAR2ERROR:
         case PHOTOSENSORSOLAR3ERROR:
-          this->Flasher(6);
+          Flasher(6);
           break;
         case SERVOUSSENSORERROR:
         case SERVOSOLARHORIZONTALERROR:
         case SERVOSOLARVERTICALERROR:
-          this->Flasher(9); 
+          Flasher(9); 
           break;
         default: break;       
       }
@@ -65,19 +79,18 @@ void TestClass :: HandleErrorLevel(int error)
 
 int TestClass :: UsSensorsTestRun()
 {
-  if(GetDistanceInCentimetersLeftSensor() == 3.0)
+  if(GetDistanceInCentimetersLeftSensor() <= 3.0)
   {
     return LEFTUSSENSORERROR;
   }
-  if(GetDistanceInCentimetersRightSensor() == 3.0)
+  if(GetDistanceInCentimetersRightSensor() <= 3.0)
   {
     return RIGHTUSSENSORERROR;
   }
-  if(GetDistanceInCentimetersCentralSensor() == 3.0)
+  if(GetDistanceInCentimetersCentralSensor() <= 3.0)
   {
     return CENTRALUSSENSORERROR;
   }
-  
   return OK;
 }
 

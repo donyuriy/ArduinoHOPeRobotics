@@ -119,9 +119,12 @@ void setup()
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
 {
-  byte in_data = Wire.read();
-  interrupts();
-  ChooseAction(in_data);  
+  if(Wire.available() > 0 && Wire.available() < 2)
+  {
+    byte in_data = Wire.read();
+    interrupts();
+    ChooseAction(in_data);  
+  }
 }
 
 byte SelfTestStart()
