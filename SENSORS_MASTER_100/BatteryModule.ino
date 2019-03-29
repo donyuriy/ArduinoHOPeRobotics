@@ -38,12 +38,7 @@
     { 
       cmd.StopTankCmd();
       if (globalMode != SUNON) globalMode = SUNON;
-      if (GetPhotoSensorData(1) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY &&
-          GetPhotoSensorData(2) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY &&
-          GetPhotoSensorData(3) < MINIMAL_BRIGHTNESS_LEVEL_FOR_SOLAR_BATTERY)
-      {
-        ActionSolarBatteryOn();
-      }
+      ActionSolarBatteryOn();
     }
     else if (GetBattaryVoltage() > HIGH_BATTERY_CHARGE)
     {

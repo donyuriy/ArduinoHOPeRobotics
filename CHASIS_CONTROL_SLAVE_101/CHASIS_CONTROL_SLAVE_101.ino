@@ -1,8 +1,10 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------------ SLAVE 101 ------------------------------------
+//Libraries
 #include <Wire.h>
 #include <avr/sleep.h>
 
+//Commands for I2C interface
 #define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
 #define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
 #define WUP 103                         // 103 - разбудить контроллеры WAKE UP
@@ -21,6 +23,10 @@
 #define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
 #define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
 
+//Error codes
+#define OK 200
+
+//System variables
 #define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
 #define DALAY_TIME 150                // время задержки по умолчанию 150мс
 #define MAXIMAL_MOTOR_AMPERAGE 17     // значение соответствует напряжению yV
@@ -50,12 +56,14 @@
 #define motorBACKWARD 2                           // режим НАЗАД
 #define motorRELEASE 3                            // освободить Двигатель
 
+//Used PINs
 #define INTERRUPT_PIN 3                           // пин для отработки прерывания Выход из Сна
 #define VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN A0      // вольтметр питания левого двигателя
 #define VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN A1     // вольтметр питания правого двигателя
 #define SDA A4
 #define SCL A5
 
+//Global variables
 byte mode = 0;                                    //последний режим
 byte tankDirection = 0;                           //для проверки направления движения
 int lightBrightness = 0;                          // сила подсветки
@@ -101,7 +109,7 @@ Motor motor;
 
 void setup()
 { 
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
@@ -118,7 +126,7 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
 
 byte SelfTestStart()
 {
- 
+  return 200;
 }
 
 void loop()
@@ -129,7 +137,7 @@ void WakeUpNow()                      //обработка прерывания 
 
 void ChooseAction(byte cmd)           // выбор действия в зависимости от полученой команды
 {
-  Serial.println(cmd);
+  //Serial.println(cmd);
   dTtemp = millis();
   switch (cmd)
   {

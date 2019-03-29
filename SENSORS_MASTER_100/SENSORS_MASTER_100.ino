@@ -1,10 +1,11 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> A4' , A5 -> A5' )
 //------------------------- MASTER ----------------------------------------
-
+//Libraries
 #include <Servo.h>
 #include <Wire.h>
 #include <avr/sleep.h>
 
+//Commands for I2C interface
 #define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
 #define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
 #define WUP 103                         // 103 - разбудить контроллеры WAKE UP
@@ -37,6 +38,8 @@
 #define PHOTOSENSORSOLAR2ERROR 422
 #define PHOTOSENSORSOLAR3ERROR 423
 
+//System variables
+#define MASTER_DEVICE_SENSORS 0x64
 #define SLAVE_DEVICE_CHASIS 0x65
 #define SLAVE_DEVICE_CAMERA 0x66
 #define LOWEST_BATTERY_CHARGE 2.51                        // значение соответствует напряжению 2.93 вольта 
@@ -51,6 +54,7 @@
 #define MIN_SOLAR_HORIZONTAL_ANGLE 5                      // минимальный угол поворота Солнечной Панели по горизонтали <- |
 #define MAX_SOLAR_HORIZONTAL_ANGLE 175                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
 
+//Used PINs
 #define ERRORLED 0                                  // показатель ошибки при самотестировании
 #define INTERRUPT_0_PIN 2                           // порт для обработки прерываний D2 (interrupt #0)
 #define INTERRUPT_1_PIN 3                           // порт для обработки прерываний D3 (interrupt #1)
@@ -70,6 +74,7 @@
 #define SOLAR_SENSOR_PIN_1 A3                       // сенсор освещенности 2
 #define SOLAR_SENSOR_PIN_3 A1                       // сенсор освещенности 3
 
+//Global variables
 unsigned long dTforUSsensor = 0;                   // задержка времени для предотврашения застреваня в узких для поворота местах
 unsigned long dTlight = 0;                         // задержка времени . ВКЛ/ВЫКЛ освещение
 unsigned long dTvoltage = 0;                       // задержка времени . проверка заряда батареи
@@ -160,7 +165,8 @@ Servo servoSunBatteryHorizontal;
 void setup()
 {
   //Serial.begin(9600);
-  Wire.begin();
+  Wire.begin(MASTER_DEVICE_SENSORS);
+  Wire.onReceive(OnReceiveEventHandler);
   pinMode(ERRORLED, OUTPUT);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, INPUT);
@@ -209,12 +215,10 @@ void loop()
     if (millis() - dTvoltage > 10000)
     {
       dTvoltage = millis();
-      bc.CheckBatteryVoltage();
-  
+      bc.CheckBatteryVoltage();  
       
       if(globalMode == SUNON)
       {
-        tests.Flasher(1);
         dTsolar = millis();
         bc.ActionSolarBatteryOn();
       }
@@ -253,6 +257,15 @@ void OnSoundInterrupt()            //обработка прерывания н�
     enginesEnabled = !enginesEnabled;
     OnStart();    
     //Serial.println("interrupt");
+  }
+}
+
+void OnReceiveEventHandler(int howMany)
+{
+  if(Wire.available()>0)
+  {
+    byte in_data = Wire.read();
+    interrupts();
   }
 }
 
