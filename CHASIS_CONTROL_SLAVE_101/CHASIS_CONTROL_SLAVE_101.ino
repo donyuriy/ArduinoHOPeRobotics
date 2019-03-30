@@ -5,11 +5,11 @@
 #include <avr/sleep.h>
 
 //Commands for I2C interface
-#define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
-#define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
-#define WUP 103                         // 103 - разбудить контроллеры WAKE UP
-#define TEST 104                        // 104 - тест всех датчиков и приводов
-#define RST 109                         // 109 - комманда RESET
+#define EMP 100                        // 100 - НИЧЕГО, НУЛЬ
+#define SLEEP 102                      // 102 - отправить контроллеры в сон SLEEP
+#define WUP 103                        // 103 - разбудить контроллеры WAKE UP
+#define TEST 104                       // 104 - тест всех датчиков и приводов
+#define RST 109                        // 109 - комманда RESET
 #define STP 110                        // 110 - СТОП
 #define FWD 111                        // 111 - ВПЕРЕД
 #define BWD 112                        // 112 - НАЗАД
@@ -22,9 +22,11 @@
 #define PLT 132                        // 132 - ВЫКЛЮЧИТЬ СВЕТ
 #define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
 #define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
+#define CHASIS_ERR 251                 // 251 - вернуть сообщение об ошибке на шасси
 
 //Error codes
 #define OK 200
+#define MEGNETOMETERDATAERROR 451
 
 //System variables
 #define addr 0x0D                     //I2C Address for The HMC5883 magnetometer
@@ -81,8 +83,8 @@ class ChasisActions
     void ActionResetTankMode();                               //RESET
     void ActionMoveTankForward();                             //вперёд
     void ActionMoveTankBackward();                            //назад
-    void ActionStopTank();                                    //стоп 
-    void ActionTurnTankLeft();                                //поворот влево 
+    void ActionStopTank();                                    //стоп
+    void ActionTurnTankLeft();                                //поворот влево
     void ActionTurnTankRight();                               //поворот вправо
     void ActionTurnTankBack();                                //разворот на 180
     void ActionSpeedUpTank();                                 //ускорить
@@ -90,7 +92,7 @@ class ChasisActions
     void ActionTurnOnTheLight();                              //включить свет
     void ActionPutOutTheLight();                              //выключить свет
     void ActionShineBrighter();                               //усилить яркость
-    void ActionShineDimmer();                                 //уменьшить яркость    
+    void ActionShineDimmer();                                 //уменьшить яркость
 };
 
 class Motor
@@ -105,23 +107,34 @@ class Motor
     void shiftWrite(int output, int high_low);
 };
 
-class Megnetometer
+class TestClass
 {
   public:
-  Megnetometer();
-  ~Megnetometer();
-  void GetRotationAngle(float *angleX, float *angleY, float *angleZ);
-  
+    TestClass();
+    ~TestClass();
+    int RunMagnetometerTest();
   private:
-  void GetMagnetometrData(float *x, float *y, float *z);
+    
+};
+
+class Magnetometer
+{
+  public:
+    Magnetometer();
+    ~Magnetometer();
+    void GetMagnetometrData(float *x, float *y, float *z);
+    
+  private:
+    
 };
 
 ChasisActions action;
 Motor motor;
-Megnetometer mag;
+TestClass tests;
+Magnetometer mag;
 
 void setup()
-{ 
+{
   //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
@@ -132,17 +145,19 @@ void setup()
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
 {
-  if(Wire.available() > 0 && Wire.available() < 2)
+  //Serial.print("Available to read: ");Serial.println(Wire.available());
+  if (Wire.available() < 2)
   {
     byte in_data = Wire.read();
     interrupts();
-    ChooseAction(in_data);  
+    ChooseAction(in_data);
   }
 }
 
-byte SelfTestStart()
+int SelfTestStart()
 {
-  return 200;
+  //return 200;
+  return tests.RunMagnetometerTest();
 }
 
 void loop()
@@ -157,93 +172,93 @@ void ChooseAction(byte cmd)           // выбор действия в зави
   dTtemp = millis();
   switch (cmd)
   {
-    case EMP:                         
+    case EMP:
       mode = EMP;
-      break;  
+      break;
     case RST:
       action.ActionResetTankMode();
-      break;  
+      break;
     case SLEEP:
       action.ActionResetTankMode();
-      ActionSetControlerToSleep();    
-      break; 
+      ActionSetControlerToSleep();
+      break;
     case TEST:
       SelfTestStart();
       break;
-    case STP:                              
+    case STP:
       action.ActionStopTank();
       break;
-    case FWD:                         
+    case FWD:
       action.ActionMoveTankForward();
       break;
-    case BWD:                             
+    case BWD:
       action.ActionMoveTankBackward();
       break;
-    case LFT:                              
+    case LFT:
       action.ActionTurnTankLeft();
       break;
-    case RGT:                         
+    case RGT:
       action.ActionTurnTankRight();
       break;
-    case TBK:                         
+    case TBK:
       action.ActionTurnTankBack();
       break;
-    case SPU:                         
+    case SPU:
       action.ActionSpeedUpTank();
       break;
-    case SDN:                         
+    case SDN:
       action.ActionSlowDownTank();
       break;
-    case TLT:                         
+    case TLT:
       action.ActionTurnOnTheLight();
       break;
-    case PLT:                         
+    case PLT:
       action.ActionPutOutTheLight();
       break;
-    case SHB:                         
+    case SHB:
       action.ActionShineBrighter();
       break;
-    case SHD:                         
+    case SHD:
       action.ActionShineDimmer();
-      break;    
+      break;
     default:
-      break;      
-  }  
+      break;
+  }
   cmd = EMP;
   GetSpeedDependence();
 }
 
 void GetSpeedDependence()
 {
-    float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
-    float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
-    
-   // Serial.print("amperageLeftMotor. "); Serial.println(amperageLeftMotor);
-    //Serial.print("amperageRightMotor. "); Serial.println(amperageRightMotor);
-    
-    if(amperageLeftMotor >= MAXIMAL_MOTOR_AMPERAGE &&
-              amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE)
-              {
-                tankSpeed += 10;
-              }
-    if(amperageLeftMotor < MAXIMAL_MOTOR_AMPERAGE &&
-              amperageRightMotor < MAXIMAL_MOTOR_AMPERAGE)
-              {
-                tankSpeed = 160;
-              }
+  float amperageLeftMotor = GetMotorVoltage(LEFT_MOTOR);
+  float amperageRightMotor = GetMotorVoltage(RIGHT_MOTOR);
+
+  // Serial.print("amperageLeftMotor. "); Serial.println(amperageLeftMotor);
+  //Serial.print("amperageRightMotor. "); Serial.println(amperageRightMotor);
+
+  if (amperageLeftMotor >= MAXIMAL_MOTOR_AMPERAGE &&
+      amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE)
+  {
+    tankSpeed += 10;
+  }
+  if (amperageLeftMotor < MAXIMAL_MOTOR_AMPERAGE &&
+      amperageRightMotor < MAXIMAL_MOTOR_AMPERAGE)
+  {
+    tankSpeed = 160;
+  }
 }
 
 float GetMotorVoltage(byte motorNumber)
 {
   float data = 0;
   byte avarage = 50;
-  switch(motorNumber)
+  switch (motorNumber)
   {
-    case 1:     
+    case 1:
       for (byte i = 0; i < avarage; i ++)
       {
         data += analogRead(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN) * 5.0 / 102.4;
-      }    
+      }
       break;
     case 2:
       for (byte i = 0; i < avarage; i ++)
@@ -258,12 +273,12 @@ float GetMotorVoltage(byte motorNumber)
 void ActionSetControlerToSleep()                  // отправить устройство в сон
 {
   mode = SLEEP;
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);   
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
   sleep_enable();
   pinMode(INTERRUPT_PIN, INPUT);
-  attachInterrupt(1,WakeUpNow, LOW);
+  attachInterrupt(1, WakeUpNow, LOW);
   sleep_mode();
-                //отслюда после пробуждения
+  //отслюда после пробуждения
   sleep_disable();
   detachInterrupt(1);
   interrupts();

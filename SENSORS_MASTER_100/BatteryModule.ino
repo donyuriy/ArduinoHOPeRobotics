@@ -28,12 +28,8 @@
   
   void BatteryClass :: CheckBatteryVoltage()                                      //проверить заряд БАТАРЕИ
   {
-    //Serial.println("CheckBatteryVoltage");
-    if (GetBattaryVoltage() <= LOWEST_BATTERY_CHARGE)
-    {
-      cmd.StopTankCmd();
-      cmd.SetSleepModeCmd(); 
-    }
+    //Serial.println(GetBattaryVoltage());
+    
     if (GetBattaryVoltage() <= LOW_BATTERY_CHARGE)
     { 
       cmd.StopTankCmd();

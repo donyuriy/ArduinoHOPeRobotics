@@ -27,22 +27,23 @@ void TestClass :: RunSelfTest()
   int t2 = PhotoSensorsTestRun();
   int t3 = UsServosTestRun();
   int t4 = SolarServosTestRun();
-        if(t1 != OK)
-        {
-          HandleError(t1);
-        }
-        if(t2 != OK)
-        {
-          HandleError(t2);
-        }
-        if(t3 != OK)
-        {
-           HandleError(t3);
-        }
-        if(t4 != OK)
-        {
-          HandleError(t4);  
-        }
+  ChasisModuleTestRun();
+  if(t1 != OK)
+  {
+    HandleError(t1);
+  }
+  if(t2 != OK)
+  {
+    HandleError(t2);
+  }
+  if(t3 != OK)
+  {
+    HandleError(t3);
+  }
+  if(t4 != OK)
+  {
+    HandleError(t4);  
+  }        
 }
 
 void TestClass :: HandleError(int error)
@@ -75,6 +76,11 @@ void TestClass :: HandleError(int error)
       digitalWrite(ERRORLED, LOW);
       errorLevel = OK;
     }  
+}
+
+void TestClass :: ChasisModuleTestRun()
+{
+  cmd.RunTest();
 }
 
 int TestClass :: UsSensorsTestRun()

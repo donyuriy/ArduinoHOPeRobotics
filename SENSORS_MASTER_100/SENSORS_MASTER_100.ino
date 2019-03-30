@@ -6,11 +6,11 @@
 #include <avr/sleep.h>
 
 //Commands for I2C interface
-#define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
-#define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
-#define WUP 103                         // 103 - разбудить контроллеры WAKE UP
-#define TEST 104                        // 104 - тест всех датчиков и приводов
-#define RST 109                         // 19 - комманда RESET
+#define EMP 100                        // 100 - НИЧЕГО, НУЛЬ
+#define SLEEP 102                      // 102 - отправить контроллеры в сон SLEEP
+#define WUP 103                        // 103 - разбудить контроллеры WAKE UP
+#define TEST 104                       // 104 - тест всех датчиков и приводов
+#define RST 109                        // 19 - комманда RESET
 #define STP 110                        // 110 - СТОП
 #define FWD 111                        // 111 - ВПЕРЕД
 #define BWD 112                        // 112 - НАЗАД
@@ -25,6 +25,7 @@
 #define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
 #define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН         глобальный
 #define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
+#define CHASIS_ERR 251                  // 251 -сообщение об ошибке на шасси
 
 //Error codes
 #define OK 200
@@ -37,6 +38,7 @@
 #define PHOTOSENSORSOLAR1ERROR 421
 #define PHOTOSENSORSOLAR2ERROR 422
 #define PHOTOSENSORSOLAR3ERROR 423
+#define CHAISISERROR 431
 
 //System variables
 #define MASTER_DEVICE_SENSORS 0x64
@@ -145,12 +147,14 @@ class TestClass
   ~TestClass();
   void Flasher(byte count);
   void RunSelfTest();
+  
 
   private:
   int UsSensorsTestRun();
   int PhotoSensorsTestRun();
   int UsServosTestRun();
   int SolarServosTestRun();
+  void ChasisModuleTestRun();
   void HandleError(int error);
 };
 
@@ -189,6 +193,7 @@ void setup()
   tests.RunSelfTest();
   OnStart();
   interruptorTime = millis();
+  digitalWrite(ERRORLED, LOW);
 }
 
 void OnStart()
@@ -267,6 +272,19 @@ void OnReceiveEventHandler(int howMany)
   {
     byte in_data = Wire.read();
     interrupts();
+    ChooseAction(in_data);
+  }
+}
+
+void ChooseAction(byte in_data)
+{
+  switch(in_data)
+  {
+    case CHASIS_ERR:
+      errorLevel = CHAISISERROR;
+      break;
+    default:
+      break;
   }
 }
 
