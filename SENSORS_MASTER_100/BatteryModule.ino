@@ -2,7 +2,8 @@
 //------------------------- MASTER (Работа с питанием -> батарея, солнечная панель) ----------------------------------------
 
   BatteryClass :: BatteryClass(void)
-  {    
+  { 
+      byte photosensorDefference = 2;    
   }
   
   BatteryClass ::  ~BatteryClass(void)

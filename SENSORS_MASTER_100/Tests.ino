@@ -3,6 +3,8 @@
 
 TestClass :: TestClass(void)
 {  
+  byte testAttemptsLeft = 5;
+  int errorLevel = 0;
 }
 
 TestClass :: ~TestClass(void)

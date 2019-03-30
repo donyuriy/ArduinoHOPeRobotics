@@ -3,12 +3,12 @@
 
 Magnetometer :: Magnetometer(void)
 {
-  float AxisXcurrent = 0;
-  float AxisYcurrent = 0;
-  float AxisZcurrent = 0;
-  float DeltaX = 0;
-  float DeltaY = 0;
-  float DeltaZ = 0;
+    float AxisXcurrent = 0;
+    float AxisYcurrent = 0;
+    float AxisZcurrent = 0;
+    float DeltaX = 0;
+    float DeltaY = 0;
+    float DeltaZ = 0;
 }
 
 Magnetometer :: ~Magnetometer(void)

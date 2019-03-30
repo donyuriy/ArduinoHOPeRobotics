@@ -3,8 +3,10 @@
 
 ChasisActions :: ChasisActions(void)
 {
-  byte tankDirection = 0; 
+  byte tankDirection = 0;
   volatile int tankSpeed = 160;
+  int lightBrightness = 0;
+  byte engineTorqueRatio = 38;
 }
 
 ChasisActions :: ~ChasisActions(void)

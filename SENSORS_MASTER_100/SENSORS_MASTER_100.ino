@@ -93,12 +93,6 @@ volatile unsigned long interruptorTime = 0;        // для срабатыва�
 byte actionsCounter = 0;                           // количество повторяющихся поворотов за последние N секунд
 byte globalMode = 0;                               // последний установленный режим (см. пометку "глобальный")
 byte extraMode = 0;                                // дополнительный режим
-byte verticalSunBattery_angle;                     // положение вертикального двигателя солнечной батареи
-byte horizontalSunBattery_angle;                   // положение горизонтального двигателя солнечной батареи
-byte angleDifference = 2;                          // разница показаний сервоприводов для операций Солнечной батареи
-int errorLevel = 0;                                 // ошибка в процессе тестирования
-byte photosensorDefference = 2;                    // разница показаний фотосенсоров для операций Солнечной батареи
-byte testAttemptsLeft = 5;
 volatile bool enginesEnabled = true;
 
 class Command
@@ -143,7 +137,11 @@ class BatteryClass
   private:  
   void SearchVerticalSolar();
   void SearchHorizontalSolar();  
-  void SolarSearchingInMotion();  
+  void SolarSearchingInMotion();
+  byte photosensorDefference;                    // разница показаний фотосенсоров для операций Солнечной батареи
+  byte verticalSunBattery_angle;                 // положение вертикального двигателя солнечной батареи
+  byte horizontalSunBattery_angle;               // положение горизонтального двигателя солнечной батареи
+
 };
 
 class TestClass
@@ -153,7 +151,9 @@ class TestClass
   ~TestClass();
   void Flasher(byte count);
   void RunSelfTest();
-  
+
+  byte testAttemptsLeft;
+  int errorLevel;                                 // ошибка в процессе тестирования
 
   private:
   int UsSensorsTestRun();
@@ -195,7 +195,6 @@ void setup()
   servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);
   //attachInterrupt(0, OnSoundInterrupt, CHANGE); 
   delay(100);
-  errorLevel = OK;
   tests.RunSelfTest();
   OnStart();
   interruptorTime = millis();
@@ -210,7 +209,7 @@ void OnStart()
 
 void loop()
 {  
-  if(errorLevel == OK)
+  if(tests.errorLevel == OK)
   {
     if(globalMode != SUNON && enginesEnabled)
     {      
@@ -248,9 +247,9 @@ void loop()
     }
     digitalWrite(ERRORLED, LOW);  
   } 
-  else if(testAttemptsLeft > 0)
+  else if(tests.testAttemptsLeft > 0)
   {
-     testAttemptsLeft --;
+     tests.testAttemptsLeft --;
      tests.RunSelfTest();
   }
   else
@@ -287,7 +286,7 @@ void ChooseAction(byte in_data)
   switch(in_data)
   {
     case CHASIS_ERR:
-      errorLevel = CHAISISERROR;
+      tests.errorLevel = CHAISISERROR;
       break;
     default:
       break;

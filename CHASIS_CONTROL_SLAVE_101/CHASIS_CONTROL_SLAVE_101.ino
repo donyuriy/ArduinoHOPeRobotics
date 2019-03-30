@@ -72,12 +72,8 @@
 #define SCL A5
 
 //Global variables
-byte mode = 0;                                    //последний режим                         
-int lightBrightness = 0;                          // сила подсветки
-int sunBrightness = 0;                            // освещенность солнцем
+byte mode = 0;                                    //последний режим 
 unsigned long dTtemp = 0;                         // задержка времени в Actions()
-byte engineTorqueRatio = 38;                      // разница передачи ШИМ сигнала на двигателя
-
 
 class ChasisActions
 {
@@ -97,8 +93,12 @@ class ChasisActions
     void ActionPutOutTheLight();                              //выключить свет
     void ActionShineBrighter();                               //усилить яркость
     void ActionShineDimmer();                                 //уменьшить яркость
-    byte tankDirection;
-    volatile int tankSpeed;
+    volatile int tankSpeed;                                   // скорость (MIN = 0, MAX = 255)
+
+  private:
+    int lightBrightness;                        // сила подсветки
+    byte engineTorqueRatio;                     // разница передачи ШИМ сигнала на двигателя
+    byte tankDirection;                         // напрвление (вперёд, назад)    
 };
 
 class Motor
