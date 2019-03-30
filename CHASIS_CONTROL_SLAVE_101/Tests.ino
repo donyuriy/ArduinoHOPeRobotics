@@ -2,22 +2,18 @@
 //------------------------- MASTER ----------------------------------------
 
 TestClass :: TestClass(void)
-{  
+{
 }
 
 TestClass :: ~TestClass(void)
-{  
+{
 }
 
 int TestClass :: RunMagnetometerTest()
 {
-  float angleX = 0;
-  float angleY = 0;
-  float angleZ = 0;
-  
-  mag.GetMagnetometrData(&angleX, &angleY, &angleZ);
-  
-  if(angleX == 0 && angleY == 0 && angleZ == 0)
+  mag.GetMagnetometrData();
+
+  if (mag.AxisXcurrent == 0 && mag.AxisYcurrent == 0 && mag.AxisZcurrent == 0)
   {
     return MEGNETOMETERDATAERROR;
   }

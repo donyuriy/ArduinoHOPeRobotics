@@ -2,33 +2,40 @@
 //------------------------------ SLAVE 101 ------------------------------------
 
 Magnetometer :: Magnetometer(void)
-{ 
-  
+{
+  float AxisXcurrent = 0;
+  float AxisYcurrent = 0;
+  float AxisZcurrent = 0;
+  float DeltaX = 0;
+  float DeltaY = 0;
+  float DeltaZ = 0;
 }
 
 Magnetometer :: ~Magnetometer(void)
 {
 }
 
-void Magnetometer :: GetMagnetometrData(float *x, float *y, float *z)
-{ 
-  int x1,y1,z1;
+void Magnetometer :: GetMagnetometrData()
+{
+  int x1;
+  int y1;
+  int z1;
+  
   Wire.begin();
-  Wire.beginTransmission(addr);   //start talking
-  Wire.write(0x0B);               // Tell the HMC5883 to Continuously Measure
-  Wire.write(0x01);               // Set the Register
+  Wire.beginTransmission(MAGNETOMETR_HMC5883_ADDRESS);   
+  Wire.write(MAGNETOMETR_HMC5883_MESASURING_COMMAND1); 
+  Wire.write(MAGNETOMETER_REGISTER_1);             
   Wire.endTransmission();
-  Wire.beginTransmission(addr);   //start talking
-  Wire.write(0x09);               // Tell the HMC5883 to Continuously Measure
-  Wire.write(0x1D);               // Set the Register
+  Wire.beginTransmission(MAGNETOMETR_HMC5883_ADDRESS); 
+  Wire.write(MAGNETOMETR_HMC5883_MESASURING_COMMAND2); 
+  Wire.write(MAGNETOMETER_REGISTER_2);               
   Wire.endTransmission();
-    
-  Wire.beginTransmission(addr);
-  Wire.write(0x00); //start with register 3.
+  Wire.beginTransmission(MAGNETOMETR_HMC5883_ADDRESS);
+  Wire.write(MAGNETOMETER_REGISTER_3);                
   Wire.endTransmission();
-  Wire.requestFrom(addr, 6);
-    
-  if(Wire.available() >= 6) 
+  Wire.requestFrom(MAGNETOMETR_HMC5883_ADDRESS, 6);
+
+  if (Wire.available() >= 6)
   {
     x1 = Wire.read();               //MSB  x
     x1 |= Wire.read() << 8;         //LSB  x
@@ -36,9 +43,33 @@ void Magnetometer :: GetMagnetometrData(float *x, float *y, float *z)
     y1 |= Wire.read() << 8;         //LSB z
     z1 = Wire.read();               //MSB y
     z1 |= Wire.read() << 8;         //LSB y
-    
-    *x = (float)abs(x1);
-    *y = (float)abs(y1);
-    *z += (float)abs(z1);
-  }     
+
+    AxisXcurrent = x1;
+    AxisYcurrent = y1;
+    AxisZcurrent = z1;     
+  }
+}
+
+void Magnetometer :: GetRotationAngle()
+{
+  int newX;
+  int newY;
+  int newZ;
+  int oldX;
+  int oldY;
+  int oldZ;
+  
+  GetMagnetometrData();
+  oldX = AxisXcurrent;
+  oldY = AxisXcurrent;
+  oldZ = AxisZcurrent;
+  delay(10);
+  GetMagnetometrData();
+  newX = AxisXcurrent;
+  newY = AxisXcurrent;
+  newZ = AxisZcurrent;
+
+  DeltaX = (float)(newX - oldX)/100;
+  DeltaY = (float)(newY - oldY)/100;
+  DeltaZ = (float)(newZ - oldZ)/100;
 }

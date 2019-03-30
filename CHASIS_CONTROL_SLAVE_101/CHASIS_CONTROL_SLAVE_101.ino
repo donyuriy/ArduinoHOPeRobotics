@@ -29,10 +29,15 @@
 #define MEGNETOMETERDATAERROR 451
 
 //System variables
-#define addr 0x0D                     //I2C Address for The HMC5883 magnetometer
-#define THIS_SLAVE_DEVICE_NUMBER 0x65  // I2C-номер данного устройства
-#define DALAY_TIME 150                // время задержки по умолчанию 150мс
-#define MAXIMAL_MOTOR_AMPERAGE 17     // значение соответствует напряжению yV
+#define MAGNETOMETR_HMC5883_MESASURING_COMMAND1 0x0B      // Tell the HMC5883 to Continuously Measure
+#define MAGNETOMETR_HMC5883_MESASURING_COMMAND2 0x09      // Tell the HMC5883 to Continuously Measure
+#define MAGNETOMETR_HMC5883_ADDRESS 0x0D                  //I2C Address for The HMC5883 magnetometer
+#define MAGNETOMETER_REGISTER_1 0x01                      // Set the Register 1
+#define MAGNETOMETER_REGISTER_2 0x1D                      // Set the Register 2
+#define MAGNETOMETER_REGISTER_3 0x00                      // Set the Register 3
+#define THIS_SLAVE_DEVICE_NUMBER 0x65                     // I2C-номер данного устройства
+#define DALAY_TIME 150                                    // время задержки по умолчанию 150мс
+#define MAXIMAL_MOTOR_AMPERAGE 17                         // значение соответствует напряжению yV
 
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
 #define RIGHT_MOTOR 2                 // двигатель №2 - правый
@@ -67,13 +72,12 @@
 #define SCL A5
 
 //Global variables
-byte mode = 0;                                    //последний режим
-byte tankDirection = 0;                           //для проверки направления движения
+byte mode = 0;                                    //последний режим                         
 int lightBrightness = 0;                          // сила подсветки
 int sunBrightness = 0;                            // освещенность солнцем
 unsigned long dTtemp = 0;                         // задержка времени в Actions()
 byte engineTorqueRatio = 38;                      // разница передачи ШИМ сигнала на двигателя
-volatile int tankSpeed;
+
 
 class ChasisActions
 {
@@ -93,6 +97,8 @@ class ChasisActions
     void ActionPutOutTheLight();                              //выключить свет
     void ActionShineBrighter();                               //усилить яркость
     void ActionShineDimmer();                                 //уменьшить яркость
+    byte tankDirection;
+    volatile int tankSpeed;
 };
 
 class Motor
@@ -114,7 +120,7 @@ class TestClass
     ~TestClass();
     int RunMagnetometerTest();
   private:
-    
+
 };
 
 class Magnetometer
@@ -122,9 +128,17 @@ class Magnetometer
   public:
     Magnetometer();
     ~Magnetometer();
-    void GetMagnetometrData(float *x, float *y, float *z);
+    void GetMagnetometrData();
+    void GetRotationAngle();
     
-  private:
+    float AxisXcurrent;
+    float AxisYcurrent;
+    float AxisZcurrent;
+    float DeltaX;
+    float DeltaY;
+    float DeltaZ;
+    
+  private:    
     
 };
 
@@ -135,12 +149,11 @@ Magnetometer mag;
 
 void setup()
 {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
   pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT);
-  tankSpeed = 160;
 }
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
@@ -239,12 +252,12 @@ void GetSpeedDependence()
   if (amperageLeftMotor >= MAXIMAL_MOTOR_AMPERAGE &&
       amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE)
   {
-    tankSpeed += 10;
+    action.tankSpeed += 10;
   }
   if (amperageLeftMotor < MAXIMAL_MOTOR_AMPERAGE &&
       amperageRightMotor < MAXIMAL_MOTOR_AMPERAGE)
   {
-    tankSpeed = 160;
+    action.tankSpeed = 160;
   }
 }
 

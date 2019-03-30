@@ -3,28 +3,30 @@
 
 ChasisActions :: ChasisActions(void)
 {
+  byte tankDirection = 0; 
+  volatile int tankSpeed = 160;
 }
 
 ChasisActions :: ~ChasisActions(void)
 {
 }
 
-void ChasisActions :: ActionResetTankMode()                        
+void ChasisActions :: ActionResetTankMode()
 {
   mode = EMP;
   ActionStopTank();
   ActionPutOutTheLight();
 }
 
-void ChasisActions :: ActionMoveTankForward()       
+void ChasisActions :: ActionMoveTankForward()
 {
   tankDirection = motorFORWARD;
   motor.chooseMotor(LEFT_MOTOR, tankDirection, tankSpeed);
-  motor.chooseMotor(RIGHT_MOTOR, tankDirection, tankSpeed - engineTorqueRatio);  
+  motor.chooseMotor(RIGHT_MOTOR, tankDirection, tankSpeed - engineTorqueRatio);
   mode = FWD;
 }
 
-void ChasisActions :: ActionMoveTankBackward()    
+void ChasisActions :: ActionMoveTankBackward()
 {
   tankDirection = motorBACKWARD;
   motor.chooseMotor(LEFT_MOTOR, tankDirection, tankSpeed);
@@ -32,7 +34,7 @@ void ChasisActions :: ActionMoveTankBackward()
   mode = BWD;
 }
 
-void ChasisActions :: ActionStopTank()                              
+void ChasisActions :: ActionStopTank()
 {
   motor.chooseMotor(LEFT_MOTOR, motorRELEASE, 0);
   motor.chooseMotor(RIGHT_MOTOR, motorRELEASE, 0);
@@ -42,126 +44,126 @@ void ChasisActions :: ActionStopTank()
 
 void ChasisActions :: ActionTurnTankLeft()
 {
-  while(millis() - dTtemp < DALAY_TIME)
+  while (millis() - dTtemp < DALAY_TIME)
   {
     motor.chooseMotor(LEFT_MOTOR, motorBACKWARD, tankSpeed + 20);
     motor.chooseMotor(RIGHT_MOTOR, motorFORWARD, tankSpeed + 20);
-  }  
-  if(mode == FWD)
+  }
+  if (mode == FWD)
   {
     ActionMoveTankForward();
   }
-  else if(mode == BWD)
+  else if (mode == BWD)
   {
     ActionMoveTankBackward();
   }
-  else 
+  else
   {
     ActionStopTank();
-  }  
+  }
 }
 
-void ChasisActions :: ActionTurnTankRight()           
+void ChasisActions :: ActionTurnTankRight()
 {
-  while(millis() - dTtemp < DALAY_TIME)
+  while (millis() - dTtemp < DALAY_TIME)
   {
     motor.chooseMotor(LEFT_MOTOR, motorFORWARD, tankSpeed + 20);
     motor.chooseMotor(RIGHT_MOTOR, motorBACKWARD, tankSpeed + 20);
   }
-  if(mode == FWD)
+  if (mode == FWD)
   {
     ActionMoveTankForward();
   }
-  else if(mode == BWD)
+  else if (mode == BWD)
   {
     ActionMoveTankBackward();
   }
-  else 
-  { 
+  else
+  {
     ActionStopTank();
-  } 
+  }
 }
 
-void ChasisActions :: ActionTurnTankBack()                           
+void ChasisActions :: ActionTurnTankBack()
 {
-  while(millis() - dTtemp < DALAY_TIME*2)
+  while (millis() - dTtemp < DALAY_TIME * 2)
   {
     motor.chooseMotor(LEFT_MOTOR, motorFORWARD, tankSpeed + 20);
     motor.chooseMotor(RIGHT_MOTOR, motorBACKWARD, tankSpeed + 20);
-  }  
-  if(mode == FWD)
+  }
+  if (mode == FWD)
   {
     ActionMoveTankForward();
   }
-  else if(mode == BWD)
+  else if (mode == BWD)
   {
     ActionMoveTankBackward();
   }
-  else 
+  else
   {
-    ActionStopTank(); 
-  } 
+    ActionStopTank();
+  }
 }
 
-void ChasisActions :: ActionSpeedUpTank()     
+void ChasisActions :: ActionSpeedUpTank()
 {
   tankSpeed += 5;
-  if(tankSpeed > 250)tankSpeed = 250;  
-    if (mode == FWD)
-    {
-      ActionMoveTankForward();
-    }
-    else if(mode != BWD)
-    {
-      ActionMoveTankBackward();
-    }
+  if (tankSpeed > 250)tankSpeed = 250;
+  if (mode == FWD)
+  {
+    ActionMoveTankForward();
+  }
+  else if (mode != BWD)
+  {
+    ActionMoveTankBackward();
+  }
 }
 
-void ChasisActions :: ActionSlowDownTank()        
+void ChasisActions :: ActionSlowDownTank()
 {
   tankSpeed -= 5;
-  if(tankSpeed < 150)tankSpeed = 150;
-   if (mode == FWD)
-    {
-      ActionMoveTankForward();
-    }
-    else if(mode != BWD)
-    {
-      ActionMoveTankBackward();
-    }
+  if (tankSpeed < 150)tankSpeed = 150;
+  if (mode == FWD)
+  {
+    ActionMoveTankForward();
+  }
+  else if (mode != BWD)
+  {
+    ActionMoveTankBackward();
+  }
 }
 
-void ChasisActions :: ActionTurnOnTheLight()                     
+void ChasisActions :: ActionTurnOnTheLight()
 {
-  if(lightBrightness == 0)
+  if (lightBrightness == 0)
   {
-    lightBrightness = 10;  
-    motor.chooseMotor(LED, motorFORWARD, lightBrightness);    
+    lightBrightness = 10;
+    motor.chooseMotor(LED, motorFORWARD, lightBrightness);
     mode = TLT;
   }
 }
 
-void ChasisActions :: ActionPutOutTheLight()    
+void ChasisActions :: ActionPutOutTheLight()
 {
-  if(lightBrightness > 0)
+  if (lightBrightness > 0)
   {
     lightBrightness = 0;
-    motor.chooseMotor(LED,motorRELEASE,lightBrightness);    
+    motor.chooseMotor(LED, motorRELEASE, lightBrightness);
     mode = PLT;
   }
 }
 
-void ChasisActions :: ActionShineBrighter()                  
+void ChasisActions :: ActionShineBrighter()
 {
   lightBrightness += 3;
-  if(lightBrightness > 30)lightBrightness = 30;
+  if (lightBrightness > 30)lightBrightness = 30;
   motor.chooseMotor(LED, motorFORWARD, lightBrightness);
 }
 
-void ChasisActions :: ActionShineDimmer()                   
+void ChasisActions :: ActionShineDimmer()
 {
   lightBrightness -= 3;
-  if(lightBrightness <= 0)
+  if (lightBrightness <= 0)
   {
     ActionPutOutTheLight();
   }

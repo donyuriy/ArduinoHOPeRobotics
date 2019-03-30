@@ -41,6 +41,12 @@
 #define CHAISISERROR 431
 
 //System variables
+#define MAGNETOMETR_HMC5883_MESASURING_COMMAND1 0x0B      // Tell the HMC5883 to Continuously Measure
+#define MAGNETOMETR_HMC5883_MESASURING_COMMAND2 0x09      // Tell the HMC5883 to Continuously Measure
+#define MAGNETOMETR_HMC5883_ADDRESS 0x0D                  //I2C Address for The HMC5883 magnetometer
+#define MAGNETOMETER_REGISTER_1 0x01                      // Set the Register 1
+#define MAGNETOMETER_REGISTER_2 0x1D                      // Set the Register 2
+#define MAGNETOMETER_REGISTER_3 0x00                      // Set the Register 3
 #define MASTER_DEVICE_SENSORS 0x64
 #define SLAVE_DEVICE_CHASIS 0x65
 #define SLAVE_DEVICE_CAMERA 0x66
