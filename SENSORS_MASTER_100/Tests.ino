@@ -1,12 +1,6 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
 //------------------------- MASTER ----------------------------------------
 
-TestClass :: TestClass(void)
-{  
-  byte testAttemptsLeft = 5;
-  int errorLevel = 0;
-}
-
 TestClass :: ~TestClass(void)
 {  
 }
@@ -33,23 +27,29 @@ void TestClass :: RunSelfTest()
   if(t1 != OK)
   {
     HandleError(t1);
+    return;
   }
   if(t2 != OK)
   {
     HandleError(t2);
+    return;
   }
   if(t3 != OK)
   {
     HandleError(t3);
+    return;
   }
   if(t4 != OK)
   {
-    HandleError(t4);  
-  }        
+    HandleError(t4); 
+    return; 
+  }
+  errorLevel = OK;    
 }
 
 void TestClass :: HandleError(int error)
 {
+  //Serial.print("Error level: "); Serial.println(error);
     if(error != OK)
     {
       switch(error)

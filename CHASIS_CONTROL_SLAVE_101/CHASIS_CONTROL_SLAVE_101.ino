@@ -36,6 +36,7 @@
 #define MAGNETOMETER_REGISTER_2 0x1D                      // Set the Register 2
 #define MAGNETOMETER_REGISTER_3 0x00                      // Set the Register 3
 #define THIS_SLAVE_DEVICE_NUMBER 0x65                     // I2C-номер данного устройства
+#define MASTER_DEVICE_SENSORS 0x64                        // I2C-номер устройства Sensors Shield (101)
 #define DALAY_TIME 150                                    // время задержки по умолчанию 150мс
 #define MAXIMAL_MOTOR_AMPERAGE 17                         // значение соответствует напряжению yV
 
@@ -78,7 +79,13 @@ unsigned long dTtemp = 0;                         // задержка време
 class ChasisActions
 {
   public:
-    ChasisActions();
+    ChasisActions()
+    {
+       tankDirection = 0;
+       tankSpeed = 160;
+       lightBrightness = 0;
+       engineTorqueRatio = 36;
+    }
     ~ChasisActions();
     void ActionResetTankMode();                               //RESET
     void ActionMoveTankForward();                             //вперёд
@@ -96,9 +103,10 @@ class ChasisActions
     volatile int tankSpeed;                                   // скорость (MIN = 0, MAX = 255)
 
   private:
-    int lightBrightness;                        // сила подсветки
-    byte engineTorqueRatio;                     // разница передачи ШИМ сигнала на двигателя
-    byte tankDirection;                         // напрвление (вперёд, назад)    
+    int lightBrightness;                       // сила подсветки
+    int engineTorqueRatio;                     // разница передачи ШИМ сигнала на двигателя
+    byte tankDirection;                        // напрвление (вперёд, назад) 
+       
 };
 
 class Motor
@@ -142,14 +150,25 @@ class Magnetometer
     
 };
 
+class Command
+{
+  public:
+    Command();
+    ~Command();
+    void SendCommandToMaster(byte command);
+
+  private:
+};
+
 ChasisActions action;
 Motor motor;
 TestClass tests;
 Magnetometer mag;
+Command cmd;
 
 void setup()
 {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
@@ -167,14 +186,13 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
   }
 }
 
-int SelfTestStart()
-{
-  //return 200;
-  return tests.RunMagnetometerTest();
+void SelfTestStart()
+{  
+  cmd.SendCommandToMaster(tests.RunMagnetometerTest());
 }
 
 void loop()
-{ }
+{}
 
 void WakeUpNow()                      //обработка прерывания на порте D3
 {}
@@ -250,7 +268,8 @@ void GetSpeedDependence()
   //Serial.print("amperageRightMotor. "); Serial.println(amperageRightMotor);
 
   if (amperageLeftMotor >= MAXIMAL_MOTOR_AMPERAGE &&
-      amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE)
+      amperageRightMotor >= MAXIMAL_MOTOR_AMPERAGE &&
+      action.tankSpeed < 250)
   {
     action.tankSpeed += 10;
   }

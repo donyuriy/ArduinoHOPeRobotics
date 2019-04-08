@@ -14,7 +14,6 @@ void Command :: SendCommandToChasis(byte command)                 //отправ
   Wire.beginTransmission(SLAVE_DEVICE_CHASIS);
   Wire.write(command);
   Wire.endTransmission(true);  
-  Wire.requestFrom(SLAVE_DEVICE_CHASIS, 2);
 }
 
 void Command :: ResetCmd()

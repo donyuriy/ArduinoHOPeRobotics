@@ -1,13 +1,6 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
 //------------------------------ SLAVE 101 ------------------------------------
 
-ChasisActions :: ChasisActions(void)
-{
-  byte tankDirection = 0;
-  volatile int tankSpeed = 160;
-  int lightBrightness = 0;
-  byte engineTorqueRatio = 38;
-}
 
 ChasisActions :: ~ChasisActions(void)
 {
@@ -22,6 +15,7 @@ void ChasisActions :: ActionResetTankMode()
 
 void ChasisActions :: ActionMoveTankForward()
 {
+  //Serial.println(engineTorqueRatio);
   tankDirection = motorFORWARD;
   motor.chooseMotor(LEFT_MOTOR, tankDirection, tankSpeed);
   motor.chooseMotor(RIGHT_MOTOR, tankDirection, tankSpeed - engineTorqueRatio);

@@ -47,9 +47,9 @@
 #define MAGNETOMETER_REGISTER_1 0x01                      // Set the Register 1
 #define MAGNETOMETER_REGISTER_2 0x1D                      // Set the Register 2
 #define MAGNETOMETER_REGISTER_3 0x00                      // Set the Register 3
-#define MASTER_DEVICE_SENSORS 0x64
-#define SLAVE_DEVICE_CHASIS 0x65
-#define SLAVE_DEVICE_CAMERA 0x66
+#define MASTER_DEVICE_SENSORS 0x64                        // I2C-номер данного устройства
+#define SLAVE_DEVICE_CHASIS 0x65                          // I2C-номер устройства шасси
+#define SLAVE_DEVICE_CAMERA 0x66                          // I2C-номер устройства Х?
 #define LOWEST_BATTERY_CHARGE 2.51                        // значение соответствует напряжению 2.93 вольта 
 #define LOW_BATTERY_CHARGE 2.92                           // значение соответствует напряжению 3.43 вольта  (остаток 10% )
 #define HIGH_BATTERY_CHARGE 3.3                           // значение соответствует напряжению 4 вольта
@@ -57,7 +57,7 @@
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_AWAKE 400            // значение освещенности для ПРОСНУТЬСЯ
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT 600     // значение освещенности для ВКЛЮЧЕНИЯ ОСВЕЩЕНИЯ
 #define MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP 800            // значение освещенности для перехода в РЕЖИМ СНА
-#define MIN_SOLAR_VERTICAL_ANGLE 70                     // минимальный угол поворота по вертикали ^
+#define MIN_SOLAR_VERTICAL_ANGLE 70                       // минимальный угол поворота по вертикали ^
 #define MAX_SOLAR_VERTICAL_ANGLE 120                      // максимальный угол поворота по вертикали ^
 #define MIN_SOLAR_HORIZONTAL_ANGLE 5                      // минимальный угол поворота Солнечной Панели по горизонтали <- |
 #define MAX_SOLAR_HORIZONTAL_ANGLE 175                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
@@ -123,7 +123,10 @@ class Command
 class BatteryClass
 {
   public:
-  BatteryClass();
+  BatteryClass()
+  {
+     photosensorDefference = 2;
+  }
   ~BatteryClass();
   float GetBattaryVoltage();
   bool IsBatteryPowerNormal();
@@ -147,7 +150,11 @@ class BatteryClass
 class TestClass
 {
   public:
-  TestClass();
+  TestClass()
+  {
+    testAttemptsLeft = 5;
+    errorLevel = 0;
+  }
   ~TestClass();
   void Flasher(byte count);
   void RunSelfTest();
@@ -193,7 +200,6 @@ void setup()
   servoUltrasoundSensor.attach(SERVO_ULTRASOUND_SENSOR_PIN);
   servoSunBatteryVertical.attach(SERVO_SUN_BATTERY_MOTOR_1);
   servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);
-  //attachInterrupt(0, OnSoundInterrupt, CHANGE); 
   delay(100);
   tests.RunSelfTest();
   OnStart();
@@ -254,25 +260,13 @@ void loop()
   }
   else
   {
+    //Serial.print("Error level: "); Serial.println(tests.errorLevel);
     tests.Flasher(3);
   }
 }
 
-void OnSoundInterrupt()            //обработка прерывания на порте D2, звуковой сенсор
-{
-  //Serial.print(".");
-  interrupts();
-  if(millis() - interruptorTime > 1000)
-  {
-    interruptorTime = millis();
-    enginesEnabled = !enginesEnabled;
-    OnStart();    
-    //Serial.println("interrupt");
-  }
-}
-
 void OnReceiveEventHandler(int howMany)
-{
+{  
   if(Wire.available() > 0)
   {
     byte in_data = Wire.read();
@@ -283,6 +277,7 @@ void OnReceiveEventHandler(int howMany)
 
 void ChooseAction(byte in_data)
 {
+  //Serial.print("Master in_data: "); Serial.println(in_data);
   switch(in_data)
   {
     case CHASIS_ERR:

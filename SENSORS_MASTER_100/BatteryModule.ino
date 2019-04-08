@@ -1,11 +1,6 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
 //------------------------- MASTER (Работа с питанием -> батарея, солнечная панель) ----------------------------------------
 
-  BatteryClass :: BatteryClass(void)
-  { 
-      byte photosensorDefference = 2;    
-  }
-  
   BatteryClass ::  ~BatteryClass(void)
   {    
   }
