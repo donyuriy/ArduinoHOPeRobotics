@@ -2,8 +2,7 @@
 //------------------------- MASTER ----------------------------------------
 
 TestClass :: ~TestClass(void)
-{  
-}
+{  }
 
 void TestClass :: Flasher(byte count)
 {  
@@ -19,39 +18,43 @@ void TestClass :: Flasher(byte count)
 
 void TestClass :: RunSelfTest()
 {   
-  int t1 = UsSensorsTestRun();
-  int t2 = PhotoSensorsTestRun();
-  int t3 = UsServosTestRun();
-  int t4 = SolarServosTestRun();
-  ChasisModuleTestRun();
+  int t1 = UsSensorsTestRun(); 
   if(t1 != OK)
   {
     HandleError(t1);
     return;
   }
+  
+  int t2 = PhotoSensorsTestRun();
   if(t2 != OK)
   {
     HandleError(t2);
     return;
   }
+  
+  int t3 = UsServosTestRun();
   if(t3 != OK)
   {
     HandleError(t3);
     return;
   }
+  
+  int t4 = SolarServosTestRun();
   if(t4 != OK)
   {
     HandleError(t4); 
     return; 
   }
-  errorLevel = OK;    
+  errorLevel = OK;
+  ChasisModuleTestRun();
 }
 
 void TestClass :: HandleError(int error)
 {
   //Serial.print("Error level: "); Serial.println(error);
     if(error != OK)
-    {
+    {      
+      errorLevel = error;
       switch(error)
       {
         case LEFTUSSENSORERROR:
@@ -70,8 +73,7 @@ void TestClass :: HandleError(int error)
           Flasher(9); 
           break;
         default: break;       
-      }
-      errorLevel = error; 
+      } 
     }
     else
     {
