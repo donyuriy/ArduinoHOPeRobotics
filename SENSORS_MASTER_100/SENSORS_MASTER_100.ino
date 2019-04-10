@@ -1,5 +1,5 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
-//------------------------- MASTER ----------------------------------------
+//------------------------- MASTER(SENSORS) ----------------------------------------
 //Libraries
 #include <Servo.h>
 #include <Wire.h>
@@ -49,7 +49,7 @@
 #define MAGNETOMETER_REGISTER_3 0x00                      // Set the Register 3
 #define MASTER_DEVICE_SENSORS 0x64                        // I2C-номер данного устройства
 #define SLAVE_DEVICE_CHASIS 0x65                          // I2C-номер устройства шасси
-#define SLAVE_DEVICE_CAMERA 0x66                          // I2C-номер устройства Х?
+#define SLAVE_DEVICE_102 0x66                             // I2C-номер устройства 102
 #define LOWEST_BATTERY_CHARGE 2.51                        // значение соответствует напряжению 2.93 вольта 
 #define LOW_BATTERY_CHARGE 2.92                           // значение соответствует напряжению 3.43 вольта  (остаток 10% )
 #define HIGH_BATTERY_CHARGE 3.3                           // значение соответствует напряжению 4 вольта
@@ -118,6 +118,7 @@ class Command
 
   private:
   void SendCommandToChasis(byte command);
+  void SendCommandTo102(byte command);
 };
 
 class BatteryClass

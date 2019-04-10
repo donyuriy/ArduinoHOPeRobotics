@@ -1,5 +1,5 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
-//------------------------- MASTER (Отправка комманд на другие контроллеры) ----------------------------------------
+//------------------------- MASTER(SENSORS) (Отправка комманд на другие контроллеры) ----------------------------------------
 
 Command :: Command(void)
 {  
@@ -15,6 +15,14 @@ void Command :: SendCommandToChasis(byte command)                 //отправ
   Wire.write(command);
   Wire.endTransmission(true);  
 }
+
+void Command :: SendCommandTo102(byte command)                 //отправка команд на устройство 102
+{  
+  Wire.beginTransmission(SLAVE_DEVICE_102);
+  Wire.write(command);
+  Wire.endTransmission(true);  
+}
+
 
 void Command :: ResetCmd()
 {

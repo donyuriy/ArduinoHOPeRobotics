@@ -37,6 +37,7 @@
 #define MAGNETOMETER_REGISTER_3 0x00                      // Set the Register 3
 #define THIS_SLAVE_DEVICE_NUMBER 0x65                     // I2C-номер данного устройства
 #define MASTER_DEVICE_SENSORS 0x64                        // I2C-номер устройства Sensors Shield (101)
+#define SLAVE_DEVICE_102 0x66                             // I2C-номер устройства 102
 #define DALAY_TIME 150                                    // время задержки по умолчанию 150мс
 #define MAXIMAL_MOTOR_AMPERAGE 17                         // значение соответствует напряжению yV
 
@@ -156,6 +157,7 @@ class Command
     Command();
     ~Command();
     void SendCommandToMaster(byte command);
+    void SendCommandTo102(byte command);
 
   private:
 };
