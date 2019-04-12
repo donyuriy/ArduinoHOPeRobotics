@@ -1,18 +1,28 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
 //------------------------------ SLAVE 101 ------------------------------------
 
-Magnetometer :: Magnetometer(void)
-{
-  float AxisXcurrent = 0;
-  float AxisYcurrent = 0;
-  float AxisZcurrent = 0;
-  float DeltaX = 0;
-  float DeltaY = 0;
-  float DeltaZ = 0;
-}
-
 Magnetometer :: ~Magnetometer(void)
 {
+}
+
+void Magnetometer :: GetRotationAngles()
+{
+  byte correctionCoefficient = 12;
+  if(axisDataError != 0)
+  {
+    GetDelta();
+    angleX = deltaX * correctionCoefficient;
+    angleY = deltaY * correctionCoefficient;
+    angleZ = deltaZ * correctionCoefficient;
+  }
+  else
+  {
+    GetError();
+    GetDelta();
+    angleX = deltaX * correctionCoefficient;
+    angleY = deltaY * correctionCoefficient;
+    angleZ = deltaZ * correctionCoefficient;
+  }
 }
 
 void Magnetometer :: GetMagnetometrData()
@@ -20,8 +30,8 @@ void Magnetometer :: GetMagnetometrData()
   int x1;
   int y1;
   int z1;
-  byte iterationCounter = 5;
-
+  byte iterationCounter = 15;
+  operationTime = millis();
   for (byte i = 0; i < iterationCounter; i++)
   {
     Wire.begin();
@@ -47,40 +57,51 @@ void Magnetometer :: GetMagnetometrData()
       z1 = Wire.read();               //MSB y
       z1 |= Wire.read() << 8;         //LSB y
 
-      AxisXcurrent += x1;
-      AxisYcurrent += y1;
-      AxisZcurrent += z1;
+      axisXcurrent += x1;
+      axisYcurrent += y1;
+      axisZcurrent += z1;
     }
     else
     {
       i--;
     }
   }
-  AxisXcurrent /=  iterationCounter;
-  AxisYcurrent /= iterationCounter;
-  AxisZcurrent /= iterationCounter;
+  axisXcurrent /=  iterationCounter;
+  axisYcurrent /= iterationCounter;
+  axisZcurrent /= iterationCounter;
+  operationTime = millis() - operationTime;
+  //Serial.print("operationTime: ");Serial.println(operationTime);
 }
 
-void Magnetometer :: GetRotationAngle()
+void Magnetometer :: GetDelta()
 {
-  int newX;
-  int newY;
-  int newZ;
-  int oldX;
-  int oldY;
-  int oldZ;
+  int newX, newY, newZ;
+  int oldX, oldY, oldZ;
 
   GetMagnetometrData();
-  oldX = AxisXcurrent;
-  oldY = AxisXcurrent;
-  oldZ = AxisZcurrent;
-  delay(10);
-  GetMagnetometrData();
-  newX = AxisXcurrent;
-  newY = AxisXcurrent;
-  newZ = AxisZcurrent;
+  oldX = axisXcurrent;
+  oldY = axisYcurrent;
+  oldZ = axisZcurrent;
+  delay(50);
 
-  DeltaX = (float)(newX - oldX) / 100;
-  DeltaY = (float)(newY - oldY) / 100;
-  DeltaZ = (float)(newZ - oldZ) / 100;
+  GetMagnetometrData();
+  newX = axisXcurrent;
+  newY = axisYcurrent;
+  newZ = axisZcurrent;
+
+  deltaX = (newX - oldX) / (1 + axisDataError);
+  deltaY = (newY - oldY) / (1 + axisDataError);
+  deltaZ = (newZ - oldZ) / (1 + axisDataError);
+}
+
+void Magnetometer :: GetError()
+{
+  byte iterationCounter = 10;
+  for (byte i = 0; i < iterationCounter; i++)
+  {
+    GetDelta();
+    axisDataError += (abs(deltaX) + abs(deltaY) + abs(deltaZ)) / 3;
+  }
+  axisDataError = (float) axisDataError / iterationCounter;
+  //Serial.print("axisDataError: "); Serial.println(axisDataError);
 }

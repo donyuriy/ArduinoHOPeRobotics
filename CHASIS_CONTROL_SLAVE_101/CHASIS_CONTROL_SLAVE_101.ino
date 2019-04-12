@@ -5,6 +5,8 @@
 #include <avr/sleep.h>
 
 //Commands for I2C interface
+
+#define DTM 99                       // 99 - остановить выполнение всех функций на устройстве на 5000 мс
 #define EMP 100                        // 100 - НИЧЕГО, НУЛЬ
 #define SLEEP 102                      // 102 - отправить контроллеры в сон SLEEP
 #define WUP 103                        // 103 - разбудить контроллеры WAKE UP
@@ -39,6 +41,7 @@
 #define MASTER_DEVICE_SENSORS 0x64                        // I2C-номер устройства Sensors Shield (101)
 #define SLAVE_DEVICE_102 0x66                             // I2C-номер устройства 102
 #define DALAY_TIME 150                                    // время задержки по умолчанию 150мс
+#define COMMAND_DELAY_TIME 5000                           // время задержки по комманде DTM ( 99 )
 #define MAXIMAL_MOTOR_AMPERAGE 17                         // значение соответствует напряжению yV
 
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
@@ -135,20 +138,40 @@ class TestClass
 class Magnetometer
 {
   public:
-    Magnetometer();
+    Magnetometer()
+    {
+      float axisXcurrent = 0;
+      float axisYcurrent = 0;
+      float axisZcurrent = 0;
+      float deltaX = 0;
+      float deltaY = 0;
+      float deltaZ = 0;
+      float angleX = 0;
+      float angleY = 0;
+      float angleZ = 0;
+      float axisDataError = 0;
+      unsigned long operationTime = 0;
+    }
     ~Magnetometer();
+    void GetRotationAngles();    
+    
+    float angleX;
+    float angleY;
+    float angleZ;
+    unsigned long operationTime;    
+    
+  private:  
     void GetMagnetometrData();
-    void GetRotationAngle();
-    
-    float AxisXcurrent;
-    float AxisYcurrent;
-    float AxisZcurrent;
-    float DeltaX;
-    float DeltaY;
-    float DeltaZ;
-    
-  private:    
-    
+    void GetDelta();    
+    void GetError();
+      
+    float axisDataError;    
+    float axisXcurrent;
+    float axisYcurrent;
+    float axisZcurrent;
+    float deltaX;
+    float deltaY;
+    float deltaZ;
 };
 
 class Command
@@ -170,11 +193,12 @@ Command cmd;
 
 void setup()
 {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
   pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT);
+  mag.GetRotationAngles();
 }
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
@@ -184,7 +208,7 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
   {
     byte in_data = Wire.read();
     interrupts();
-    ChooseAction(in_data);
+    //ChooseAction(in_data);
   }
 }
 
@@ -194,7 +218,14 @@ void SelfTestStart()
 }
 
 void loop()
-{}
+{
+  mag.GetRotationAngles();
+  Serial.println(mag.angleX);
+  Serial.println(mag.angleY);
+  Serial.println(mag.angleZ);
+  Serial.println(" ");
+  delay(1000);
+}
 
 void WakeUpNow()                      //обработка прерывания на порте D3
 {}
@@ -205,6 +236,9 @@ void ChooseAction(byte cmd)           // выбор действия в зави
   dTtemp = millis();
   switch (cmd)
   {
+    case DTM:
+      DelayController();
+      break;
     case EMP:
       mode = EMP;
       break;
@@ -317,4 +351,19 @@ void ActionSetControlerToSleep()                  // отправить устр
   detachInterrupt(1);
   interrupts();
   mode = EMP;
+}
+
+void DelayController()
+{  
+  delay(COMMAND_DELAY_TIME);  
+}
+
+void EnableInterrupts()
+{
+  interrupts();
+}
+
+void DisableInterrupts()
+{
+  noInterrupts();
 }

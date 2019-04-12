@@ -11,9 +11,9 @@ TestClass :: ~TestClass(void)
 
 int TestClass :: RunMagnetometerTest()
 {
-  mag.GetMagnetometrData();
+  mag.GetRotationAngles();
 
-  if (mag.AxisXcurrent == 0 && mag.AxisYcurrent == 0 && mag.AxisZcurrent == 0)
+  if (mag.angleX == 0 && mag.angleY == 0 && mag.angleZ == 0)
   {
     return MEGNETOMETERDATAERROR;
   }
