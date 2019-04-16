@@ -7,22 +7,9 @@ Magnetometer :: ~Magnetometer(void)
 
 void Magnetometer :: GetRotationAngles()
 {
-  byte correctionCoefficient = 12;
-  if(axisDataError != 0)
-  {
-    GetDelta();
-    angleX = deltaX * correctionCoefficient;
-    angleY = deltaY * correctionCoefficient;
-    angleZ = deltaZ * correctionCoefficient;
-  }
-  else
-  {
-    GetError();
-    GetDelta();
-    angleX = deltaX * correctionCoefficient;
-    angleY = deltaY * correctionCoefficient;
-    angleZ = deltaZ * correctionCoefficient;
-  }
+
+
+
 }
 
 void Magnetometer :: GetMagnetometrData()
@@ -30,8 +17,7 @@ void Magnetometer :: GetMagnetometrData()
   int x1;
   int y1;
   int z1;
-  byte iterationCounter = 15;
-  operationTime = millis();
+  byte iterationCounter = 5;
   for (byte i = 0; i < iterationCounter; i++)
   {
     Wire.begin();
@@ -69,39 +55,36 @@ void Magnetometer :: GetMagnetometrData()
   axisXcurrent /=  iterationCounter;
   axisYcurrent /= iterationCounter;
   axisZcurrent /= iterationCounter;
-  operationTime = millis() - operationTime;
-  //Serial.print("operationTime: ");Serial.println(operationTime);
 }
 
-void Magnetometer :: GetDelta()
-{
-  int newX, newY, newZ;
-  int oldX, oldY, oldZ;
-
-  GetMagnetometrData();
-  oldX = axisXcurrent;
-  oldY = axisYcurrent;
-  oldZ = axisZcurrent;
-  delay(50);
-
-  GetMagnetometrData();
-  newX = axisXcurrent;
-  newY = axisYcurrent;
-  newZ = axisZcurrent;
-
-  deltaX = (newX - oldX) / (1 + axisDataError);
-  deltaY = (newY - oldY) / (1 + axisDataError);
-  deltaZ = (newZ - oldZ) / (1 + axisDataError);
+float Magnetometer :: filterX(float val) {
+  xPc = xP + xvarProcess;
+  xG = xPc / (xPc + xvarVolt);
+  xP = (1 - xG) * xPc;
+  xXp = xXe;
+  xZp = xXp;
+  xXe = xG * (val - xZp) + xXp;
+  return (xXe);
 }
 
-void Magnetometer :: GetError()
+float Magnetometer :: filterY(float val)
 {
-  byte iterationCounter = 10;
-  for (byte i = 0; i < iterationCounter; i++)
-  {
-    GetDelta();
-    axisDataError += (abs(deltaX) + abs(deltaY) + abs(deltaZ)) / 3;
-  }
-  axisDataError = (float) axisDataError / iterationCounter;
-  //Serial.print("axisDataError: "); Serial.println(axisDataError);
+  yPc = yP + yvarProcess;
+  yG = yPc / (yPc + yvarVolt);
+  yP = (1 - yG) * yPc;
+  yXp = yXe;
+  yZp = yXp;
+  yXe = yG * (val - xZp) + yXp;
+  return (yXe);
+}
+
+float Magnetometer :: filterZ(float val)
+{
+  zPc = zP + zvarProcess;
+  zG = zPc / (zPc + zvarVolt);
+  zP = (1 - zG) * zPc;
+  zXp = zXe;
+  zZp = zXp;
+  zXe = zG * (val - zZp) + zXp;
+  return (zXe);
 }

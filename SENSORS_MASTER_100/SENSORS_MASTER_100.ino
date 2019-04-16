@@ -153,14 +153,14 @@ class TestClass
   public:
   TestClass()
   {
-    testAttemptsLeft = 5;
-    errorLevel = 0;
+    testAttemptsLeft = 5;                       // попыток для прохождения самотестирования
+    errorLevel = 0;                             // ошибка в процессе тестирования
   }
+  
   ~TestClass();
   void Flasher(byte count);
   void RunSelfTest();
-
-  byte testAttemptsLeft;
+  byte testAttemptsLeft;                          // попыток для прохождения самотестирования
   int errorLevel;                                 // ошибка в процессе тестирования
 
   private:

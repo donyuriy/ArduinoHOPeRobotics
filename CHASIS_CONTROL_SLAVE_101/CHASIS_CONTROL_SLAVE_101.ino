@@ -131,8 +131,6 @@ class TestClass
     TestClass();
     ~TestClass();
     int RunMagnetometerTest();
-  private:
-
 };
 
 class Magnetometer
@@ -140,38 +138,54 @@ class Magnetometer
   public:
     Magnetometer()
     {
-      float axisXcurrent = 0;
-      float axisYcurrent = 0;
-      float axisZcurrent = 0;
-      float deltaX = 0;
-      float deltaY = 0;
-      float deltaZ = 0;
-      float angleX = 0;
-      float angleY = 0;
-      float angleZ = 0;
-      float axisDataError = 0;
-      unsigned long operationTime = 0;
+      axisXcurrent = 0;
+      axisYcurrent = 0;
+      axisZcurrent = 0;
+      angleX = 0;
+      angleY = 0;
+      angleZ = 0;
+
+      xvarVolt = 0.25;  
+      xvarProcess = 0.05; 
+      xPc = 0.0;
+      xG = 0.0;
+      xP = 1.0;
+      xXp = 0.0;
+      xZp = 0.0;
+      xXe = 0.0;
+
+      yvarVolt = 0.25;  
+      yvarProcess = 0.05; 
+      yPc = 0.0;
+      yG = 0.0;
+      yP = 1.0;
+      yXp = 0.0;
+      yZp = 0.0;
+      yXe = 0.0;
+
+      zvarVolt = 0.25;  
+      zvarProcess = 0.05; 
+      zPc = 0.0;
+      zG = 0.0;
+      zP = 1.0;
+      zXp = 0.0;
+      zZp = 0.0;
+      zXe = 0.0;
     }
-    ~Magnetometer();
-    void GetRotationAngles();    
     
-    float angleX;
-    float angleY;
-    float angleZ;
-    unsigned long operationTime;    
+    ~Magnetometer();
+    void GetRotationAngles();
+    float angleX, angleY, angleZ;                                       // углы поворота по осям X, Y, Z   
     
   private:  
     void GetMagnetometrData();
-    void GetDelta();    
-    void GetError();
-      
-    float axisDataError;    
-    float axisXcurrent;
-    float axisYcurrent;
-    float axisZcurrent;
-    float deltaX;
-    float deltaY;
-    float deltaZ;
+    float filterX(float val);
+    float filterY(float val);
+    float filterZ(float val);
+    float axisXcurrent,axisYcurrent, axisZcurrent;                      //текущее значение напряженности магнитного поля по осям  
+    float xvarVolt, xvarProcess, xPc, xG, xP, xXp, xZp, xXe;            //для фильтра Калмана оси X
+    float yvarVolt ,yvarProcess, yPc, yG, yP, yXp, yZp, yXe;            //для фильтра Калмана оси Y
+    float zvarVolt ,zvarProcess, zPc, zG, zP, zXp, zZp, zXe;            //для фильтра Калмана оси Z
 };
 
 class Command
@@ -181,8 +195,6 @@ class Command
     ~Command();
     void SendCommandToMaster(byte command);
     void SendCommandTo102(byte command);
-
-  private:
 };
 
 ChasisActions action;
