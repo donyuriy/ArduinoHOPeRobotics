@@ -5,30 +5,31 @@
 #include <avr/sleep.h>
 
 //Commands for I2C interface
-
-#define DTM 99                       // 99 - остановить выполнение всех функций на устройстве на 5000 мс
-#define EMP 100                        // 100 - НИЧЕГО, НУЛЬ
-#define SLEEP 102                      // 102 - отправить контроллеры в сон SLEEP
-#define WUP 103                        // 103 - разбудить контроллеры WAKE UP
-#define TEST 104                       // 104 - тест всех датчиков и приводов
-#define RST 109                        // 109 - комманда RESET
-#define STP 110                        // 110 - СТОП
-#define FWD 111                        // 111 - ВПЕРЕД
-#define BWD 112                        // 112 - НАЗАД
-#define SPU 115                        // 115 - УСКОРИТЬ
-#define SDN 116                        // 116 - ЗАМЕДЛИТЬ
-#define LFT 121                        // 121 - поворот НАЛЕВО
-#define RGT 122                        // 122 - поворот НАПРАВО
-#define TBK 123                        // 123 - РАЗВОРОТ на 180
-#define TLT 131                        // 131 - ВКЛЮЧИТЬ СВЕТ
-#define PLT 132                        // 132 - ВЫКЛЮЧИТЬ СВЕТ
-#define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
-#define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
-#define CHASIS_ERR 251                 // 251 - вернуть сообщение об ошибке на шасси
+#define DTM 99                          // 99 - остановить выполнение всех функций на устройстве на 5000 мс
+#define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
+#define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
+#define WUP 103                         // 103 - разбудить контроллеры WAKE UP
+#define TEST 104                        // 104 - тест всех датчиков и приводов
+#define RST 109                         // 109 - комманда RESET
+#define STP 110                         // 110 - СТОП
+#define FWD 111                         // 111 - ВПЕРЕД
+#define BWD 112                         // 112 - НАЗАД
+#define SPU 115                         // 115 - УСКОРИТЬ
+#define SDN 116                         // 116 - ЗАМЕДЛИТЬ
+#define LFT 121                         // 121 - поворот НАЛЕВО
+#define RGT 122                         // 122 - поворот НАПРАВО
+#define TBK 123                         // 123 - РАЗВОРОТ на 180
+#define TLT 131                         // 131 - ВКЛЮЧИТЬ СВЕТ
+#define PLT 132                         // 132 - ВЫКЛЮЧИТЬ СВЕТ
+#define SHB 133                         // 133 - сделать подсветку ЯРЧЕ
+#define SHD 134                         // 134 - сделать подсветку ТУСКЛЕЕ
+#define MGM 140                         // 140 - получить показания магнитометра
+#define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН         глобальный
+#define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
 
 //Error codes
 #define OK 200
-#define MEGNETOMETERDATAERROR 451
+#define MEGNETOMETERDATAERROR 255
 
 //System variables
 #define MAGNETOMETR_HMC5883_MESASURING_COMMAND1 0x0B      // Tell the HMC5883 to Continuously Measure
@@ -107,10 +108,12 @@ class ChasisActions
     volatile int tankSpeed;                                   // скорость (MIN = 0, MAX = 255)
 
   private:
+    float GetRotationAngle();
     int lightBrightness;                       // сила подсветки
     int engineTorqueRatio;                     // разница передачи ШИМ сигнала на двигателя
     byte tankDirection;                        // напрвление (вперёд, назад) 
-    int rotationAngle;                         // угол поворота, согласно показаниям магнитометра    
+    int rotationAngle;                         // угол поворота, согласно показаниям магнитометра  
+      
 };
 
 class Motor
@@ -193,6 +196,10 @@ class Command
   public:
     Command();
     ~Command();
+    void SendErrorToMaster();
+    void SendOkToMaster();
+
+  private:
     void SendCommandToMaster(byte command);
     void SendCommandTo102(byte command);
 };
@@ -205,7 +212,7 @@ Command cmd;
 
 void setup()
 {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
@@ -219,26 +226,26 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
   {
     byte in_data = Wire.read();
     interrupts();
-    //ChooseAction(in_data);
+    ChooseAction(in_data);
   }
 }
 
 void SelfTestStart()
 {  
-  cmd.SendCommandToMaster(tests.RunMagnetometerTest());
+  if(tests.RunMagnetometerTest() == OK)
+  {
+    cmd.SendOkToMaster();
+  }
+  else
+  {
+    cmd.SendErrorToMaster();
+  }  
 }
 
 void loop()
-{
-  mag.GetRotationAngles();
-  Serial.println(mag.horizontalAngle);
-  Serial.println(mag.verticalAngle);
-  Serial.println(mag.compas);
-  Serial.println(" ");
-  delay(500);
-}
+{}
 
-void WakeUpNow()                      //обработка прерывания на порте D3
+void WakeUpNow()                      //обработка прерывания на порте D3(пробуждение контроллера)
 {}
 
 void ChooseAction(byte cmd)           // выбор действия в зависимости от полученой команды
@@ -298,6 +305,9 @@ void ChooseAction(byte cmd)           // выбор действия в зави
       break;
     case SHD:
       action.ActionShineDimmer();
+      break;
+    case MGM:    
+      mag.GetRotationAngles();
       break;
     default:
       break;
@@ -367,14 +377,4 @@ void ActionSetControlerToSleep()                  // отправить устр
 void DelayController()
 {  
   delay(COMMAND_DELAY_TIME);  
-}
-
-void EnableInterrupts()
-{
-  interrupts();
-}
-
-void DisableInterrupts()
-{
-  noInterrupts();
 }

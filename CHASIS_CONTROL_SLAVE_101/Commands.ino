@@ -23,3 +23,13 @@ void Command :: SendCommandTo102(byte command)                 //отправк�
   Wire.write(command);
   Wire.endTransmission(true);  
 }
+
+void Command :: SendOkToMaster()
+{
+  SendCommandToMaster(OK);
+}
+
+void Command :: SendErrorToMaster()
+{
+  SendCommandToMaster(MEGNETOMETERDATAERROR);
+}

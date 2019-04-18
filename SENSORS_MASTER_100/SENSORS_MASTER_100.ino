@@ -23,12 +23,13 @@
 #define PLT 132                        // 132 - ВЫКЛЮЧИТЬ СВЕТ
 #define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
 #define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
+#define MGM 140                         // 140 - получить показания магнитометра
 #define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН         глобальный
 #define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
-#define CHASIS_ERR 251                  // 251 -сообщение об ошибке на шасси
 
 //Error codes
 #define OK 200
+#define MEGNETOMETERDATAERROR 255
 #define LEFTUSSENSORERROR 401
 #define RIGHTUSSENSORERROR 402
 #define CENTRALUSSENSORERROR 403
@@ -38,7 +39,6 @@
 #define PHOTOSENSORSOLAR1ERROR 421
 #define PHOTOSENSORSOLAR2ERROR 422
 #define PHOTOSENSORSOLAR3ERROR 423
-#define CHAISISERROR 431
 
 //System variables
 #define MAGNETOMETR_HMC5883_MESASURING_COMMAND1 0x0B      // Tell the HMC5883 to Continuously Measure
@@ -114,6 +114,7 @@ class Command
   void ShineBrighterCmd();
   void ShineDimmerCmd();
   void SetSleepModeCmd();
+  void GetMagnetometerValues();
   void RunTest();
 
   private:
@@ -220,7 +221,12 @@ void loop()
   {
     if(globalMode != SUNON && enginesEnabled)
     {      
+      cmd.GetMagnetometerValues();
       CheckForObstackles();
+    }
+    else
+    {
+      cmd.StopTankCmd();
     }
     
     if (millis() - dTlight > 2000 && enginesEnabled)
@@ -256,11 +262,13 @@ void loop()
   } 
   else if(tests.testAttemptsLeft > 0)
   {
+    //Serial.print("tests.testAttemptsLeft: "); Serial.println(tests.testAttemptsLeft);
      tests.testAttemptsLeft --;
      tests.RunSelfTest();
   }
   else
   {
+    //Serial.print("tests.testAttemptsLeft: "); Serial.println(tests.testAttemptsLeft);
     //Serial.print("Error level: "); Serial.println(tests.errorLevel);
     tests.Flasher(3);
   }
@@ -281,8 +289,8 @@ void ChooseAction(byte in_data)
   //Serial.print("Master in_data: "); Serial.println(in_data);
   switch(in_data)
   {
-    case CHASIS_ERR:
-      tests.errorLevel = CHAISISERROR;
+    case MEGNETOMETERDATAERROR:
+      tests.errorLevel = MEGNETOMETERDATAERROR;
       break;
     default:
       break;

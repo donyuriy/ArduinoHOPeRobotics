@@ -8,6 +8,10 @@ ChasisActions :: ~ChasisActions(void)
 
 void ChasisActions :: ActionResetTankMode()
 {
+  for(byte i = 0; i < 10; i++)
+  {    
+    mag.GetRotationAngles();
+  }
   mode = EMP;
   ActionStopTank();
   ActionPutOutTheLight();
@@ -167,4 +171,10 @@ void ChasisActions :: ActionShineDimmer()
   {
     motor.chooseMotor(LED, motorFORWARD, lightBrightness);
   }
+}
+
+float ChasisActions :: GetRotationAngle()
+{
+  mag.GetRotationAngles();
+  return mag.horizontalAngle;
 }

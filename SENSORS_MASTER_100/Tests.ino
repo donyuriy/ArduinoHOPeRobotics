@@ -51,7 +51,7 @@ void TestClass :: RunSelfTest()
 
 void TestClass :: HandleError(int error)
 {
-  //Serial.print("Error level: "); Serial.println(error);
+  Serial.print("Error level: "); Serial.println(error);
     if(error != OK)
     {      
       errorLevel = error;
@@ -71,6 +71,9 @@ void TestClass :: HandleError(int error)
         case SERVOSOLARHORIZONTALERROR:
         case SERVOSOLARVERTICALERROR:
           Flasher(9); 
+          break;
+        case MEGNETOMETERDATAERROR:
+          Flasher(15);
           break;
         default: break;       
       } 

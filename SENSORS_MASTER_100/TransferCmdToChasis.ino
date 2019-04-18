@@ -101,3 +101,8 @@ void Command :: RunTest()                           //запустить сам�
 {
   SendCommandToChasis(TEST);
 }
+
+void Command :: GetMagnetometerValues()
+{
+  SendCommandToChasis(MGM);
+}
