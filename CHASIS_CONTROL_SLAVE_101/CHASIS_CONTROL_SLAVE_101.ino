@@ -110,7 +110,7 @@ class ChasisActions
     int lightBrightness;                       // сила подсветки
     int engineTorqueRatio;                     // разница передачи ШИМ сигнала на двигателя
     byte tankDirection;                        // напрвление (вперёд, назад) 
-       
+    int rotationAngle;                         // угол поворота, согласно показаниям магнитометра    
 };
 
 class Motor
@@ -141,11 +141,11 @@ class Magnetometer
       axisXcurrent = 0;
       axisYcurrent = 0;
       axisZcurrent = 0;
-      angleX = 0;
-      angleY = 0;
-      angleZ = 0;
+      horizontalAngle = 0;
+      compas = 0;
+      verticalAngle = 0;
 
-      xvarVolt = 0.25;  
+      xvarVolt = 0.9;  
       xvarProcess = 0.05; 
       xPc = 0.0;
       xG = 0.0;
@@ -154,7 +154,7 @@ class Magnetometer
       xZp = 0.0;
       xXe = 0.0;
 
-      yvarVolt = 0.25;  
+      yvarVolt = 0.5;  
       yvarProcess = 0.05; 
       yPc = 0.0;
       yG = 0.0;
@@ -163,7 +163,7 @@ class Magnetometer
       yZp = 0.0;
       yXe = 0.0;
 
-      zvarVolt = 0.25;  
+      zvarVolt = 0.9;  
       zvarProcess = 0.05; 
       zPc = 0.0;
       zG = 0.0;
@@ -175,10 +175,10 @@ class Magnetometer
     
     ~Magnetometer();
     void GetRotationAngles();
-    float angleX, angleY, angleZ;                                       // углы поворота по осям X, Y, Z   
+    float horizontalAngle, compas, verticalAngle;                                       // углы поворота по осям X, Y, Z   
     
   private:  
-    void GetMagnetometrData();
+    void GetMagnetometerData();
     float filterX(float val);
     float filterY(float val);
     float filterZ(float val);
@@ -210,7 +210,6 @@ void setup()
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
   pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT);
-  mag.GetRotationAngles();
 }
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
@@ -232,11 +231,11 @@ void SelfTestStart()
 void loop()
 {
   mag.GetRotationAngles();
-  Serial.println(mag.angleX);
-  Serial.println(mag.angleY);
-  Serial.println(mag.angleZ);
+  Serial.println(mag.horizontalAngle);
+  Serial.println(mag.verticalAngle);
+  Serial.println(mag.compas);
   Serial.println(" ");
-  delay(1000);
+  delay(500);
 }
 
 void WakeUpNow()                      //обработка прерывания на порте D3
