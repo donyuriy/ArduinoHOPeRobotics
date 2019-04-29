@@ -5,7 +5,6 @@ ChasisActions :: ~ChasisActions(void)
 {
 }
 
-
 void ChasisActions :: ActionResetTankMode()
 {
   for(byte i = 0; i < 10; i++)
