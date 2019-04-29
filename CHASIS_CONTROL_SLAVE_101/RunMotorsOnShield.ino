@@ -9,6 +9,14 @@ Motor :: ~Motor(void)
 {
 }
 
+Motor :: Motor(void)
+{
+}
+
+Motor :: ~Motor(void)
+{
+}
+
 void Motor :: chooseMotor(int motorNumber, int command, int motorSpeed)    // выбор двигетеля
 {
   int motorA, motorB;

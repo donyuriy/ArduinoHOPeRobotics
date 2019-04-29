@@ -1,3 +1,4 @@
+
 // I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
 //------------------------- MASTER(SENSORS) ----------------------------------------
 //Libraries
@@ -25,7 +26,7 @@
 #define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
 #define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
 #define MGM 140                         // 140 - получить показания магнитометра
-#define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН        
+#define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН
 #define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
 
 //Error codes
@@ -52,6 +53,7 @@
 #define MASTER_DEVICE_SENSORS 0x64                        // I2C-номер данного устройства
 #define SLAVE_DEVICE_CHASIS 0x65                          // I2C-номер устройства шасси
 #define SLAVE_DEVICE_102 0x66                             // I2C-номер устройства 102
+
 #define LOWEST_BATTERY_CHARGE 2.51                        // значение соответствует напряжению 2.93 вольта 
 #define LOW_BATTERY_CHARGE 2.92                           // значение соответствует напряжению 3.43 вольта  (остаток 10% )
 #define HIGH_BATTERY_CHARGE 3.3                           // значение соответствует напряжению 4 вольта
@@ -151,7 +153,6 @@ class BatteryClass
     byte photosensorDefference;                    // разница показаний фотосенсоров для операций Солнечной батареи
     byte verticalSunBattery_angle;                 // положение вертикального двигателя солнечной батареи
     byte horizontalSunBattery_angle;               // положение горизонтального двигателя солнечной батареи
-
 };
 
 class TestClass
@@ -414,7 +415,6 @@ void TurnRightOrLeft()                                // выбор сторон
   {
     //Serial.println("distanceRight < 30 && distanceLeft < 30");
     cmd.TurnBackCmd();
-  }
   else if (distanceRight > distanceLeft)
   {
     cmd.TurnRightCmd();

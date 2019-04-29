@@ -1,10 +1,10 @@
 // I2C-соединение (общие 5V & GND, соединение по A4 -> SDA , A5 -> SCL )
 //---------- SLAVE 101 Исполнение команд двигателями шасси и светодиодами------------
 
-
 ChasisActions :: ~ChasisActions(void)
 {
 }
+
 
 void ChasisActions :: ActionResetTankMode()
 {
@@ -51,6 +51,7 @@ void ChasisActions :: ActionTurnTankLeft()
     motor.chooseMotor(RIGHT_MOTOR, motorFORWARD, tankSpeed + 20);
   }
   if (mode == FWD)
+
   {
     ActionMoveTankForward();
   }
@@ -95,6 +96,7 @@ void ChasisActions :: ActionTurnTankBack()
     motor.chooseMotor(RIGHT_MOTOR, motorBACKWARD, tankSpeed + 20);
   }
   if (mode == FWD)
+
   {
     ActionMoveTankForward();
   }
@@ -120,6 +122,7 @@ void ChasisActions :: ActionSpeedUpTank()
   {
     ActionMoveTankBackward();
   }
+
 }
 
 void ChasisActions :: ActionSlowDownTank()
