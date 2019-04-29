@@ -58,7 +58,7 @@ void Magnetometer :: GetMagnetometerData()
   Wire.endTransmission();
   Wire.requestFrom(MAGNETOMETR_HMC5883_ADDRESS, 6);
 
-  if (Wire.available() > 5)
+  if (Wire.available() >= 6)
   {
     x = Wire.read();               //MSB  x
     x |= Wire.read() << 8;         //LSB  x

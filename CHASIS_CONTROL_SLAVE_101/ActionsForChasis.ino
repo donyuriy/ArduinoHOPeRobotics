@@ -44,7 +44,8 @@ void ChasisActions :: ActionStopTank()
 
 void ChasisActions :: ActionTurnTankLeft()
 {
-  while (millis() - dTtemp < DALAY_TIME)
+  //mag.GetRotationAngles();
+  while (millis() - dTRotationAngleEstimate < DALAY_TIME)
   {
     motor.chooseMotor(LEFT_MOTOR, motorBACKWARD, tankSpeed + 20);
     motor.chooseMotor(RIGHT_MOTOR, motorFORWARD, tankSpeed + 20);
@@ -65,7 +66,8 @@ void ChasisActions :: ActionTurnTankLeft()
 
 void ChasisActions :: ActionTurnTankRight()
 {
-  while (millis() - dTtemp < DALAY_TIME)
+  //mag.GetRotationAngles();
+  while (millis() - dTRotationAngleEstimate < DALAY_TIME)
   {
     motor.chooseMotor(LEFT_MOTOR, motorFORWARD, tankSpeed + 20);
     motor.chooseMotor(RIGHT_MOTOR, motorBACKWARD, tankSpeed + 20);
@@ -86,7 +88,8 @@ void ChasisActions :: ActionTurnTankRight()
 
 void ChasisActions :: ActionTurnTankBack()
 {
-  while (millis() - dTtemp < DALAY_TIME * 2)
+  //mag.GetRotationAngles();
+  while (millis() - dTRotationAngleEstimate < DALAY_TIME * 2)
   {
     motor.chooseMotor(LEFT_MOTOR, motorFORWARD, tankSpeed + 20);
     motor.chooseMotor(RIGHT_MOTOR, motorBACKWARD, tankSpeed + 20);

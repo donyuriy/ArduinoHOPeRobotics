@@ -5,7 +5,7 @@
 #include <avr/sleep.h>
 
 //Commands for I2C interface
-#define DTM 99                          // 99 - остановить выполнение всех функций на устройстве на 5000 мс
+#define DTM 99                          // 99 - остановить выполнение всех функций на устройстве на 1000 мс
 #define EMP 100                         // 100 - НИЧЕГО, НУЛЬ
 #define SLEEP 102                       // 102 - отправить контроллеры в сон SLEEP
 #define WUP 103                         // 103 - разбудить контроллеры WAKE UP
@@ -42,7 +42,7 @@
 #define MASTER_DEVICE_SENSORS 0x64                        // I2C-номер устройства Sensors Shield (101)
 #define SLAVE_DEVICE_102 0x66                             // I2C-номер устройства 102
 #define DALAY_TIME 150                                    // время задержки по умолчанию 150мс
-#define COMMAND_DELAY_TIME 5000                           // время задержки по комманде DTM ( 99 )
+#define COMMAND_DELAY_TIME 1000                           // время задержки по комманде DTM ( 99 )
 #define MAXIMAL_MOTOR_AMPERAGE 17                         // значение соответствует напряжению yV
 
 #define LEFT_MOTOR 1                  // двигатель №1 - левый
@@ -79,7 +79,7 @@
 
 //Global variables
 byte mode = 0;                                    //последний режим 
-unsigned long dTtemp = 0;                         // задержка времени в Actions()
+unsigned long dTRotationAngleEstimate = 0;        // задержка времени в Actions()
 
 class ChasisActions
 {
@@ -212,17 +212,18 @@ Command cmd;
 
 void setup()
 {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   Wire.begin(THIS_SLAVE_DEVICE_NUMBER);
   Wire.onReceive(OnReceiveEventHandler);
   pinMode(VOLTMETER_ONLEFT_MOTOR_SENSOR_PIN, INPUT);
   pinMode(VOLTMETER_ONRIGHT_MOTOR_SENSOR_PIN, INPUT);
+  dTRotationAngleEstimate = millis();
 }
 
 void OnReceiveEventHandler(int bytes)   //получение команды через I2C
 {
   //Serial.print("Available to read: ");Serial.println(Wire.available());
-  if (Wire.available() < 2)
+  if (Wire.available() > 0 && Wire.available() < 2)
   {
     byte in_data = Wire.read();
     interrupts();
@@ -232,6 +233,7 @@ void OnReceiveEventHandler(int bytes)   //получение команды че
 
 void SelfTestStart()
 {  
+  
   if(tests.RunMagnetometerTest() == OK)
   {
     cmd.SendOkToMaster();
@@ -251,7 +253,7 @@ void WakeUpNow()                      //обработка прерывания 
 void ChooseAction(byte cmd)           // выбор действия в зависимости от полученой команды
 {
   //Serial.println(cmd);
-  dTtemp = millis();
+  dTRotationAngleEstimate = millis();
   switch (cmd)
   {
     case DTM:
@@ -268,6 +270,7 @@ void ChooseAction(byte cmd)           // выбор действия в зави
       ActionSetControlerToSleep();
       break;
     case TEST:
+      action.ActionStopTank();
       SelfTestStart();
       break;
     case STP:

@@ -6,6 +6,7 @@
 #include <avr/sleep.h>
 
 //Commands for I2C interface
+#define DTM 99                         // 99 - остановить выполнение всех функций на устройстве на 1000 мс
 #define EMP 100                        // 100 - НИЧЕГО, НУЛЬ
 #define SLEEP 102                      // 102 - отправить контроллеры в сон SLEEP
 #define WUP 103                        // 103 - разбудить контроллеры WAKE UP
@@ -24,12 +25,13 @@
 #define SHB 133                        // 133 - сделать подсветку ЯРЧЕ
 #define SHD 134                        // 134 - сделать подсветку ТУСКЛЕЕ
 #define MGM 140                         // 140 - получить показания магнитометра
-#define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН         глобальный
+#define SUNON 141                       // 141 - режим СОЛНЕЧНОЙ БАТАРЕИ ВКЛЮЧЁН        
 #define SUNOFF 142                      // 142 - режим СОЛНЕЧНОЙ БАТАРЕИ ВЫКЛЮЧЕН        глобальный 
 
 //Error codes
 #define OK 200
 #define MEGNETOMETERDATAERROR 255
+
 #define LEFTUSSENSORERROR 401
 #define RIGHTUSSENSORERROR 402
 #define CENTRALUSSENSORERROR 403
@@ -61,11 +63,14 @@
 #define MAX_SOLAR_VERTICAL_ANGLE 120                      // максимальный угол поворота по вертикали ^
 #define MIN_SOLAR_HORIZONTAL_ANGLE 5                      // минимальный угол поворота Солнечной Панели по горизонтали <- |
 #define MAX_SOLAR_HORIZONTAL_ANGLE 175                    // максимальный угол поворота Солнечной Панели по горизонтали | ->
+#define COMMAND_DELAY_TIME 1000                           // время задержки по комманде DTM ( 99 )
 
 //Used PINs
 #define ERRORLED 0                                  // показатель ошибки при самотестировании
-#define INTERRUPT_0_PIN 2                           // порт для обработки прерываний D2 (interrupt #0)
-#define INTERRUPT_1_PIN 3                           // порт для обработки прерываний D3 (interrupt #1)
+#define COLLISION_SENSOR 2                          // сенсор столкновения
+#define INTERRUPT_1_DIGITAL_PIN 3                   // порт, обрабатывающий прерывание INTERRUPT_1_PIN
+#define INTERRUPT_0_PIN 0                           // порт для обработки прерываний D2 (interrupt #0) - датчик столкновения
+#define INTERRUPT_1_PIN 1                           // порт для обработки прерываний D3 (interrupt #1) - цифровой сенсор освещенности
 #define ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN 4        // УЗ-ЛЕВЫЙ сенсор расстояния передатчик
 #define ULTRASOUND_LEFT_SENSOR_ECHO_PIN 5           // УЗ-ЛЕВЫЙ сенсор расстояния приёмник
 #define ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN 6       // УЗ-ПРАВЫЙ сенсор расстояния передатчик
@@ -78,9 +83,9 @@
 #define OUTPUT_WAKEUP_INTERRUPT_PIN 13              // для отправки цифрового сигнала для прерывания пробуждения вспомогательных шилдов
 
 #define VOLTMETER_SENSOR_PIN A0                     // вольтметр батареи
+#define SOLAR_SENSOR_PIN_3 A1                       // сенсор освещенности 3
 #define SOLAR_SENSOR_PIN_2 A2                       // сенсор освещенности 1
 #define SOLAR_SENSOR_PIN_1 A3                       // сенсор освещенности 2
-#define SOLAR_SENSOR_PIN_3 A1                       // сенсор освещенности 3
 
 //Global variables
 unsigned long dTforUSsensor = 0;                   // задержка времени для предотврашения застреваня в узких для поворота местах
@@ -91,86 +96,86 @@ unsigned long timeToSleep = 0;                     // оживание до са
 volatile unsigned long interruptorTime = 0;        // для срабатывание функции прерывания на d2 (OnSoundInterrupt)
 
 byte actionsCounter = 0;                           // количество повторяющихся поворотов за последние N секунд
-byte globalMode = 0;                               // последний установленный режим (см. пометку "глобальный")
-byte extraMode = 0;                                // дополнительный режим
-volatile bool enginesEnabled = true;
+byte motionDirectionMode = EMP;                    // последний установленный режим (см. пометку "глобальный")
+byte lightingMode = EMP;                           // дополнительный режим
+byte sunBatteryMode = EMP;                         // режим солнечной батареи
 
 class Command
 {
   public:
-  Command();
-  ~Command();
-  void ResetCmd();
-  void MoveForwardCmd();
-  void MoveBackCmd();
-  void TurnRightCmd();
-  void TurnLeftCmd();
-  void TurnBackCmd();
-  void StopTankCmd();
-  void SpeedUpCmd();
-  void SlowDownCmd();
-  void TurnOnTheLightCmd();
-  void PutOutTheLightCmd();
-  void ShineBrighterCmd();
-  void ShineDimmerCmd();
-  void SetSleepModeCmd();
-  void GetMagnetometerValues();
-  void RunTest();
+    Command();
+    ~Command();
+    void ResetCmd();
+    void MoveForwardCmd();
+    void MoveBackCmd();
+    void TurnRightCmd();
+    void TurnLeftCmd();
+    void TurnBackCmd();
+    void StopTankCmd();
+    void SpeedUpCmd();
+    void SlowDownCmd();
+    void TurnOnTheLightCmd();
+    void PutOutTheLightCmd();
+    void ShineBrighterCmd();
+    void ShineDimmerCmd();
+    void SetSleepModeCmd();
+    void GetMagnetometerValues();
+    void RunTest();
 
   private:
-  void SendCommandToChasis(byte command);
-  void SendCommandTo102(byte command);
+    void SendCommandToChasis(byte command);
+    void SendCommandTo102(byte command);
 };
 
 class BatteryClass
 {
   public:
-  BatteryClass()
-  {
-     photosensorDefference = 2;
-  }
-  ~BatteryClass();
-  float GetBattaryVoltage();
-  bool IsBatteryPowerNormal();
-  void CheckBatteryVoltage();
-  void ActionSolarBatteryOn();
-  void SetUpSolarBattery(Servo servoSunBatteryVertical, Servo servoSunBatteryHorizontal);
-  void ActionSolarBatteryOff();
-  float GetPhotoSensorData(byte sensorID);
-  void RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo);
-  
-  private:  
-  void SearchVerticalSolar();
-  void SearchHorizontalSolar();  
-  void SolarSearchingInMotion();
-  byte photosensorDefference;                    // разница показаний фотосенсоров для операций Солнечной батареи
-  byte verticalSunBattery_angle;                 // положение вертикального двигателя солнечной батареи
-  byte horizontalSunBattery_angle;               // положение горизонтального двигателя солнечной батареи
+    BatteryClass()
+    {
+      photosensorDefference = 2;
+    }
+    ~BatteryClass();
+    float GetBattaryVoltage();
+    bool IsBatteryPowerNormal();
+    void CheckBatteryVoltage();
+    void ActionSolarBatteryOn();
+    void SetUpSolarBattery(Servo servoSunBatteryVertical, Servo servoSunBatteryHorizontal);
+    void ActionSolarBatteryOff();
+    float GetPhotoSensorData(byte sensorID);
+    void RunServos(byte ServoStartAngle, byte ServoFinishAngle, Servo servo);
+
+  private:
+    void SearchVerticalSolar();
+    void SearchHorizontalSolar();
+    void SolarSearchingInMotion();
+    byte photosensorDefference;                    // разница показаний фотосенсоров для операций Солнечной батареи
+    byte verticalSunBattery_angle;                 // положение вертикального двигателя солнечной батареи
+    byte horizontalSunBattery_angle;               // положение горизонтального двигателя солнечной батареи
 
 };
 
 class TestClass
 {
   public:
-  TestClass()
-  {
-    testAttemptsLeft = 5;                       // попыток для прохождения самотестирования
-    errorLevel = 0;                             // ошибка в процессе тестирования
-  }
-  
-  ~TestClass();
-  void Flasher(byte count);
-  void RunSelfTest();
-  byte testAttemptsLeft;                          // попыток для прохождения самотестирования
-  int errorLevel;                                 // ошибка в процессе тестирования
+    TestClass()
+    {
+      testAttemptsLeft = 5;                       // попыток для прохождения самотестирования
+      errorLevel = 0;                             // ошибка в процессе тестирования
+    }
+
+    ~TestClass();
+    void Flasher(byte count);
+    void RunSelfTest();
+    byte testAttemptsLeft;                          // попыток для прохождения самотестирования
+    int errorLevel;                                 // ошибка в процессе тестирования
 
   private:
-  int UsSensorsTestRun();
-  int PhotoSensorsTestRun();
-  int UsServosTestRun();
-  int SolarServosTestRun();
-  void ChasisModuleTestRun();
-  void HandleError(int error);
+    int UsSensorsTestRun();
+    int PhotoSensorsTestRun();
+    int UsServosTestRun();
+    int SolarServosTestRun();
+    void ChasisModuleTestRun();
+    void HandleError(int error);
 };
 
 BatteryClass bc;
@@ -192,18 +197,18 @@ void setup()
   pinMode(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, OUTPUT);
   pinMode(ULTRASOUND_LEFT_SENSOR_ECHO_PIN, INPUT);
   pinMode(ULTRASOUND_RIGHT_SENSOR_TRIGGER_PIN, OUTPUT);
-  pinMode(ULTRASOUND_RIGHT_SENSOR_ECHO_PIN, INPUT);    
-  pinMode(OUTPUT_WAKEUP_INTERRUPT_PIN, OUTPUT);  
+  pinMode(ULTRASOUND_RIGHT_SENSOR_ECHO_PIN, INPUT);
+  pinMode(OUTPUT_WAKEUP_INTERRUPT_PIN, OUTPUT);
   pinMode(SOLAR_SENSOR_PIN_1, INPUT);
   pinMode(SOLAR_SENSOR_PIN_2, INPUT);
   pinMode(SOLAR_SENSOR_PIN_3, INPUT);
   pinMode(VOLTMETER_SENSOR_PIN, INPUT);
-  pinMode(INTERRUPT_1_PIN, INPUT);
+  pinMode(INTERRUPT_1_DIGITAL_PIN, INPUT);
+  pinMode(COLLISION_SENSOR, INPUT_PULLUP);            
   servoUltrasoundSensor.attach(SERVO_ULTRASOUND_SENSOR_PIN);
   servoSunBatteryVertical.attach(SERVO_SUN_BATTERY_MOTOR_1);
   servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);
   delay(100);
-  tests.RunSelfTest();
   OnStart();
   interruptorTime = millis();
   digitalWrite(ERRORLED, LOW);
@@ -211,41 +216,41 @@ void setup()
 
 void OnStart()
 {
-  cmd.ResetCmd();   
+  tests.RunSelfTest();
+  cmd.ResetCmd();
   bc.CheckBatteryVoltage();
 }
 
 void loop()
-{  
-  if(tests.errorLevel == OK)
+{   
+  if (tests.errorLevel == OK)
   {
-    if(globalMode != SUNON && enginesEnabled)
-    {      
-      cmd.GetMagnetometerValues();
+    if (sunBatteryMode != SUNON)
+    {
       CheckForObstackles();
     }
     else
     {
       cmd.StopTankCmd();
     }
-    
-    if (millis() - dTlight > 2000 && enginesEnabled)
+
+    if (millis() - dTlight > 2000)
     {
       dTlight = millis();
-      TurnOnOffLight();     
+      TurnOnOffLight();
     }
-  
+
     if (millis() - dTvoltage > 10000)
     {
       dTvoltage = millis();
-      bc.CheckBatteryVoltage();  
-      
-      if(globalMode == SUNON)
+      bc.CheckBatteryVoltage();
+
+      if (sunBatteryMode == SUNON)
       {
         dTsolar = millis();
         bc.ActionSolarBatteryOn();
       }
-      
+
       if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
           bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
           bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_SLEEP &&
@@ -258,25 +263,25 @@ void loop()
         timeToSleep = millis();
       }
     }
-    digitalWrite(ERRORLED, LOW);  
-  } 
-  else if(tests.testAttemptsLeft > 0)
+    digitalWrite(ERRORLED, LOW);
+  }
+  else if (tests.testAttemptsLeft > 0)
   {
-    //Serial.print("tests.testAttemptsLeft: "); Serial.println(tests.testAttemptsLeft);
-     tests.testAttemptsLeft --;
-     tests.RunSelfTest();
+    Serial.print("tests.testAttemptsLeft: "); Serial.println(tests.testAttemptsLeft);
+    tests.testAttemptsLeft --;
+    tests.RunSelfTest();
   }
   else
   {
-    //Serial.print("tests.testAttemptsLeft: "); Serial.println(tests.testAttemptsLeft);
-    //Serial.print("Error level: "); Serial.println(tests.errorLevel);
+    Serial.print("tests.testAttemptsLeft: "); Serial.println(tests.testAttemptsLeft);
+    Serial.print("Error level: "); Serial.println(tests.errorLevel);
     tests.Flasher(3);
   }
 }
 
 void OnReceiveEventHandler(int howMany)
-{  
-  if(Wire.available() > 0)
+{
+  if (Wire.available() > 0)
   {
     byte in_data = Wire.read();
     interrupts();
@@ -287,8 +292,11 @@ void OnReceiveEventHandler(int howMany)
 void ChooseAction(byte in_data)
 {
   //Serial.print("Master in_data: "); Serial.println(in_data);
-  switch(in_data)
+  switch (in_data)
   {
+    case DTM:
+      DelayController();
+      break;
     case MEGNETOMETERDATAERROR:
       tests.errorLevel = MEGNETOMETERDATAERROR;
       break;
@@ -301,13 +309,12 @@ void WakeUpNow()                   //обработка прерывания н�
 { }
 
 void SleepNow()                 //режим сна
-{ 
+{
   cmd.SetSleepModeCmd();
   delay(1000);
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
   sleep_enable();
-  attachInterrupt(1, WakeUpNow, LOW);
-  globalMode = SLEEP;
+  attachInterrupt(INTERRUPT_1_PIN, WakeUpNow, LOW);   // цифровой датчик освещения (сигнал проснуться)
   sleep_mode();
   //отслюда после пробуждения
   sleep_disable();
@@ -329,7 +336,7 @@ bool IsParkedForSleep()                                   // парковка
   delay(200);
   float distanceForward = GetDistanceInCentimetersCentralSensor();
   while (distanceForward > 35)
-  {    
+  {
     distanceForward = GetDistanceInCentimetersCentralSensor();
   }
   cmd.StopTankCmd();
@@ -337,32 +344,33 @@ bool IsParkedForSleep()                                   // парковка
 }
 
 void CheckForObstackles()                                // поиск препятствий
-{      
+{
+  CheckForCollision();
   float distanceLeftDown = GetDistanceInCentimetersLeftSensor();
   float distanceRightDown = GetDistanceInCentimetersRightSensor();
 
-  if(distanceLeftDown < 10 || distanceRightDown < 10)
+  if (distanceLeftDown < 10 || distanceRightDown < 10)
   {
     //Serial.println("! obstacle");
-    cmd.StopTankCmd();    
+    cmd.StopTankCmd();
     cmd.TurnBackCmd();
     delay(100);
     cmd.StopTankCmd();
-    TurnRightOrLeft(); 
+    TurnRightOrLeft();
   }
-  if(distanceLeftDown < 25)
+  if (distanceLeftDown < 25)
   {
     cmd.TurnRightCmd();
   }
-  if(distanceRightDown < 25)
+  if (distanceRightDown < 25)
   {
     cmd.TurnLeftCmd();
   }
-  
+
   servoUltrasoundSensor.write(100);
   delay(300);
   float distanceForward = GetDistanceInCentimetersCentralSensor();
-  
+
   if (distanceForward < 25)
   {
     //Serial.println("distanceForward"); Serial.println(distanceForward);
@@ -373,11 +381,11 @@ void CheckForObstackles()                                // поиск преп�
   {
     cmd.StopTankCmd();
     TurnRightOrLeft();
-  }  
+  }
   else
-  {    
+  {
     cmd.MoveForwardCmd();
-  }   
+  }
 
 }
 
@@ -402,21 +410,21 @@ void TurnRightOrLeft()                                // выбор сторон
   float distanceLeft = GetDistanceInCentimetersCentralSensor();
   servoUltrasoundSensor.write(100);
 
-  if(distanceRight < 30 && distanceLeft < 30)
+  if (distanceRight < 30 && distanceLeft < 30)
   {
     //Serial.println("distanceRight < 30 && distanceLeft < 30");
     cmd.TurnBackCmd();
-  }  
+  }
   else if (distanceRight > distanceLeft)
   {
     cmd.TurnRightCmd();
     actionsCounter ++;
   }
-  else 
+  else
   {
     cmd.TurnLeftCmd();
     actionsCounter ++;
-  }  
+  }
 }
 
 float GetDistanceInCentimetersCentralSensor()                       //получить расстояние с ультрозв. датчика
@@ -426,11 +434,11 @@ float GetDistanceInCentimetersCentralSensor()                       //получ
   digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(ULTRASOUND_CENTRAL_SENSOR_TRIGGER_PIN, LOW);
-  float distance = (pulseIn(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, HIGH)) / 58.2;    
+  float distance = (pulseIn(ULTRASOUND_CENTRAL_SENSOR_ECHO_PIN, HIGH)) / 58.2;
   //Serial.print("distance = "); Serial.println(distance);
   if (distance > 200)distance = 200;
   if (distance < 3)distance = 3;
-  return distance;  
+  return distance;
 }
 
 float GetDistanceInCentimetersLeftSensor()
@@ -441,10 +449,10 @@ float GetDistanceInCentimetersLeftSensor()
   delayMicroseconds(10);
   digitalWrite(ULTRASOUND_LEFT_SENSOR_TRIGGER_PIN, LOW);
   float distance = (pulseIn(ULTRASOUND_LEFT_SENSOR_ECHO_PIN, HIGH)) / 58.2;
-   //Serial.print("dL = "); Serial.println(distance);
+  //Serial.print("dL = "); Serial.println(distance);
   if (distance > 200)distance = 200;
   if (distance < 3)distance = 3;
-  return distance; 
+  return distance;
 }
 
 float GetDistanceInCentimetersRightSensor()
@@ -461,21 +469,36 @@ float GetDistanceInCentimetersRightSensor()
   return distance;
 }
 
-void TurnOnOffLight()                                                                 //влючить/выключить свет
+void CheckForCollision()
 { 
-  if(globalMode != SUNON)
+  bool isCollision = !digitalRead(COLLISION_SENSOR);
+  if(isCollision)
+  {
+    cmd.StopTankCmd();
+    cmd.MoveBackCmd();
+    TurnRightOrLeft();
+  } 
+}
+
+void TurnOnOffLight()                                                                 //влючить/выключить свет
+{
+  if (sunBatteryMode != SUNON)
   {
     bc.SetUpSolarBattery(servoSunBatteryVertical, servoSunBatteryHorizontal);
   }
   if (bc.GetPhotoSensorData(1) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
       bc.GetPhotoSensorData(2) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT &&
-      bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT )
-
+      bc.GetPhotoSensorData(3) > MINIMAL_BRIGHTNESS_LEVEL_FOR_TURNON_LIGHT)
   {
     cmd.TurnOnTheLightCmd();
   }
-  else 
-  {    
+  else
+  {
     cmd.PutOutTheLightCmd();
   }
+}
+
+void DelayController()
+{
+  delay(COMMAND_DELAY_TIME);
 }

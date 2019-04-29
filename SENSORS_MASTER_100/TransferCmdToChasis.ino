@@ -2,63 +2,68 @@
 //------------------------- MASTER(SENSORS) (Отправка комманд на другие контроллеры) ----------------------------------------
 
 Command :: Command(void)
-{  
+{
 }
 
 Command :: ~Command(void)
-{  
+{
 }
 
 void Command :: SendCommandToChasis(byte command)                 //отправка команд на шасси
-{  
+{
   Wire.beginTransmission(SLAVE_DEVICE_CHASIS);
   Wire.write(command);
-  Wire.endTransmission(true);  
+  Wire.endTransmission(true);
 }
 
 void Command :: SendCommandTo102(byte command)                 //отправка команд на устройство 102
-{  
+{
   Wire.beginTransmission(SLAVE_DEVICE_102);
   Wire.write(command);
-  Wire.endTransmission(true);  
+  Wire.endTransmission(true);
 }
 
 
 void Command :: ResetCmd()
 {
+  motionDirectionMode = STP;
   SendCommandToChasis(RST);
 }
 
 void Command :: MoveForwardCmd()                     //двигаться вперёд
-{  
+{
+
+  motionDirectionMode = FWD;
   SendCommandToChasis(FWD);
-  extraMode = FWD;
 }
 
 void Command :: MoveBackCmd()                        //двигаться назад
-{  
+{
+  motionDirectionMode = BWD;
   SendCommandToChasis(BWD);
-  extraMode = BWD;
 }
 
 void Command :: TurnRightCmd()                       //повернуть вправо
 {
+  motionDirectionMode = RGT;
   SendCommandToChasis(RGT);
 }
 
 void Command :: TurnLeftCmd()                        //повернуть влево
 {
+  motionDirectionMode = LFT;
   SendCommandToChasis(LFT);
 }
 
 void Command :: TurnBackCmd()                        // резвернуться на 180град.
 {
+  motionDirectionMode = TBK;
   SendCommandToChasis(TBK);
 }
 
 void Command :: StopTankCmd()                        // остановиться
 {
-  extraMode = STP;
+  motionDirectionMode = STP;
   SendCommandToChasis(STP);
 }
 
@@ -74,12 +79,20 @@ void Command :: SlowDownCmd()                        // замедлиться
 
 void Command :: TurnOnTheLightCmd()                  //включить освещение
 {
-  SendCommandToChasis(TLT);
+  if (lightingMode != TLT)
+  {
+    lightingMode = TLT;
+    SendCommandToChasis(TLT);
+  }
 }
 
 void Command :: PutOutTheLightCmd()                  // выключить освещение
 {
-  SendCommandToChasis(PLT);
+  if (lightingMode != PLT)
+  {
+    lightingMode = PLT;
+    SendCommandToChasis(PLT);
+  }
 }
 
 void Command :: ShineBrighterCmd()                   //усилить освещение
