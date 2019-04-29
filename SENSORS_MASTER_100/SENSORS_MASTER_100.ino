@@ -205,7 +205,7 @@ void setup()
   pinMode(SOLAR_SENSOR_PIN_3, INPUT);
   pinMode(VOLTMETER_SENSOR_PIN, INPUT);
   pinMode(INTERRUPT_1_DIGITAL_PIN, INPUT);
-  pinMode(COLLISION_SENSOR, INPUT_PULLUP);            
+  pinMode(COLLISION_SENSOR, INPUT_PULLUP);
   servoUltrasoundSensor.attach(SERVO_ULTRASOUND_SENSOR_PIN);
   servoSunBatteryVertical.attach(SERVO_SUN_BATTERY_MOTOR_1);
   servoSunBatteryHorizontal.attach(SERVO_SUN_BATTERY_MOTOR_2);
@@ -223,7 +223,7 @@ void OnStart()
 }
 
 void loop()
-{   
+{
   if (tests.errorLevel == OK)
   {
     if (sunBatteryMode != SUNON)
@@ -346,7 +346,7 @@ bool IsParkedForSleep()                                   // парковка
 
 void CheckForObstackles()                                // поиск препятствий
 {
-  CheckForCollision();
+  CheckForCollision();  
   float distanceLeftDown = GetDistanceInCentimetersLeftSensor();
   float distanceRightDown = GetDistanceInCentimetersRightSensor();
 
@@ -391,7 +391,7 @@ void CheckForObstackles()                                // поиск преп�
 }
 
 void TurnRightOrLeft()                                // выбор стороны поворота
-{
+{ 
   if (millis() - dTforUSsensor > 10000)
   {
     dTforUSsensor = millis();
@@ -415,6 +415,7 @@ void TurnRightOrLeft()                                // выбор сторон
   {
     //Serial.println("distanceRight < 30 && distanceLeft < 30");
     cmd.TurnBackCmd();
+  }
   else if (distanceRight > distanceLeft)
   {
     cmd.TurnRightCmd();
@@ -426,6 +427,7 @@ void TurnRightOrLeft()                                // выбор сторон
     actionsCounter ++;
   }
 }
+
 
 float GetDistanceInCentimetersCentralSensor()                       //получить расстояние с ультрозв. датчика
 {
@@ -470,14 +472,14 @@ float GetDistanceInCentimetersRightSensor()
 }
 
 void CheckForCollision()
-{ 
+{
   bool isCollision = !digitalRead(COLLISION_SENSOR);
-  if(isCollision)
+  if (isCollision)
   {
     cmd.StopTankCmd();
     cmd.MoveBackCmd();
     TurnRightOrLeft();
-  } 
+  }
 }
 
 void TurnOnOffLight()                                                                 //влючить/выключить свет
