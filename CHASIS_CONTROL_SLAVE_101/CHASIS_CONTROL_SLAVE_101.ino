@@ -89,7 +89,7 @@ class ChasisActions
        tankDirection = 0;
        tankSpeed = 160;
        lightBrightness = 0;
-       engineTorqueRatio = 36;
+       engineTorqueRatio = 24;
     }
     ~ChasisActions();
     void ActionResetTankMode();                               //RESET
